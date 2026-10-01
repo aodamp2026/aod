@@ -2403,6 +2403,58 @@ const DATA = {
    "filled": 0
   },
   {
+   "code": "BOS",
+   "region": "北美",
+   "items": {
+    "curfew": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "deplane": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "entry": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "duty": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "crew": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "other": {
+     "status": null,
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 0
+  },
+  {
    "code": "PRG",
    "region": "歐洲",
    "items": {
@@ -2772,7 +2824,7 @@ const TZMAP = {
   KUL:"Asia/Kuala_Lumpur", SIN:"Asia/Singapore",
   CGK:"Asia/Jakarta", DPS:"Asia/Makassar",
   LAX:"America/Los_Angeles", SFO:"America/Los_Angeles", ONT:"America/Los_Angeles", SEA:"America/Los_Angeles",
-  PHX:"America/Phoenix", DFW:"America/Chicago", IAD:"America/New_York",
+  PHX:"America/Phoenix", DFW:"America/Chicago", IAD:"America/New_York", BOS:"America/New_York",
   PRG:"Europe/Prague", SYD:"Australia/Sydney", AKL:"Pacific/Auckland"
 };
 const WD = ["週日","週一","週二","週三","週四","週五","週六"];
@@ -3198,6 +3250,7 @@ SEA:{n:"SEATTLE-TACOMA",ll:[47.45,-122.31],r:[[160,3627,-.25,0,"L"],[160,2873,0,
 PHX:{n:"PHOENIX SKY HARBOR",ll:[33.43,-112.01],r:[[80,3502,-1,0,"8"],[70,3353,.55,.1,"7L"],[70,2377,.8,.2,"7R"]],t:[[0,-.2,1.4,.35,.05]],m:[[190,8,4],[20,7,1.2]],c:[[330,4,3],[80,4.5,2.5]],rv:[[250,3.5,190,2,120,2,75,4]]},
 DFW:{n:"DALLAS/FORT WORTH",ll:[32.9,-97.04],r:[[170,4085,-1.62,0,"C"],[170,4085,-.92,0,"R"],[170,4085,-2.28,.3,"L"],[180,4085,.9,0,"L"],[180,4085,1.6,0,"R"],[130,2835,2.44,-1.35,"R"],[130,2743,-1.2,3.3,"L"]],t:[[-1.2,0,.45,.45,.05],[-.6,0,.45,.45,.05],[0,0,.45,.45,.05],[.6,0,.45,.45,.05],[1.2,0,.45,.45,.05]],w:[["c",0,7,1.6]],c:[[300,8,3],[100,9,3]]},
 IAD:{n:"WASHINGTON DULLES",ll:[38.95,-77.46],r:[[10,3505,-.8,0,"C"],[10,3505,.8,0,"R"],[10,2865,-2.2,.3,"L"],[120,3200,-1.6,-2.43]],t:[[-.9,0,1,.3,.05],[0,0,.9,.25,.05],[.5,0,.9,.25,.05]],c:[[320,6,2.5],[20,6,2]]},
+BOS:{n:"BOSTON LOGAN",ll:[42.36,-71.01],r:[[40,3050,0,0,"R"],[40,2396,-.5,.45,"L"],[150,3073,.1,.2,"R"],[90,2134,-.3,.7],[140,1524,.6,-.9]],t:[[.2,-1.1,1.2,.4,.05]],w:[["S"],["I",.25],["C",255,3.2,1.6],["C",330,2.4,1.5]],c:[[255,3.2,1.2]]},
 PRG:{n:"PRAGUE",ll:[50.1,14.26],r:[[60,3715,0,0],[120,3250,-.9,-.2]],t:[[1,-1.1,.9,.3,.05]],c:[[100,7,3]],rv:[[20,9,80,7,140,9]],m:[[200,6,2]]},
 SYD:{n:"SYDNEY",ll:[-33.95,151.18],r:[[160,3962,.52,.3,"R"],[160,2438,-.52,-.3,"L"],[70,2530,-1.05,-.25]],t:[[-.6,1.4,.4,.8,.05],[-.9,-1.2,.5,.6,.05]],w:[["h",170,1.1],["I",.12,1]],c:[[10,6,2.5],[45,2,1.2]]},
 AKL:{n:"AUCKLAND",ll:[-37.01,174.79],r:[[50,3635,0,0,"5R"]],t:[[0,.5,.9,.3,.05]],w:[["h",310,1.3],["c",235,3.2,2.2]],c:[[20,8,3]],m:[[330,3.8,.6],[25,9,1]]}
@@ -3294,7 +3347,7 @@ const Sky = (()=>{
       if(c.tx){   // 有指定聯絡滑行道（如 MFM 跨海滑行道）：走指定路線到機坪
         gates=c.tx.map(pl=>{ const q=[]; for(let i=0;i<pl.length;i+=2) q.push(EF([pl[i],pl[i+1]]));
           return {a:q[0][0], path:[[q[0][0],T],...q.slice(1)]}; });
-      } else gates=best?[best.tA-best.hu*.45,best.tA+best.hu*.45].map(a=>({a,path:[[a,T],[a,best.sp]]}))
+      } else gates=best?[best.tA+best.hu*.3,best.tA+best.hu*.6].map(a=>({a,path:[[a,T],[a,best.sp]]}))
                        :[{a:Math.min(L-.1,Math.max(.1,L*.7)),path:[[Math.min(L-.1,Math.max(.1,L*.7)),T]]}];
       const tail=g=>g.path;
       // 落地路線：航廈在前方 → 30° 快速脫離道；在後方 → 垂直脫離道後回頭
@@ -3306,7 +3359,9 @@ const Sky = (()=>{
       });
       r.arr.forEach(A=>{ A.Tr=2*A.Dr/(VA+VX); A.Te=A.Tr+(A.len-A.Dr)/VX+2.5; A.end=[A.P[A.P.length-1][0]-A.P[A.P.length-2][0], A.P[A.P.length-1][1]-A.P[A.P.length-2][1]]; });
       // 起飛路線（從停機位出發）
-      r.deps=gates.map(g=>{ const D0=mk([...g.path.slice().reverse(),[.06,T],[.06,0],[.14,0]]);
+      // 離場機用航廈另一半的停機位（靠跑道頭那側），不與剛停好的到場機搶同一機位
+      const dgates=c.tx?gates:best?[best.tA-best.hu*.3,best.tA-best.hu*.6].map(a=>({a,path:[[a,T],[a,best.sp]]})):gates;
+      r.deps=dgates.map(g=>{ const D0=mk([...g.path.slice().reverse(),[.06,T],[.06,0],[.14,0]]);
         D0.Tt=D0.len/VX+1.2; D0.st=[D0.P[1][0]-D0.P[0][0], D0.P[1][1]-D0.P[0][1]]; return D0; });
       // 地面標線
       r.marks=[[[.06,T],[L-.06,T]].map(W),[[.06,0],[.06,T]].map(W),[[L-.06,0],[L-.06,T]].map(W)]
@@ -3385,8 +3440,9 @@ const Sky = (()=>{
         g.closePath(); g.fillStyle=`rgba(${rf()<.5?"30,90,110":"40,70,90"},${.05+rf()*.08})`; g.fill(); } }
     g.setTransform(1,0,0,1,0,0);
 
-    /* 水域遮罩 */
-    const m=mk(N), mc=m.getContext("2d"); wt(mc); mc.fillStyle="#fff";
+    /* 水域遮罩（半解析度即可，沒有水域的站直接略過） */
+    if((G.cfg.w||[]).length){
+    const NM=Math.ceil(N/2), m=mk(NM), mc=m.getContext("2d"); mc.setTransform(k/2,0,0,-k/2,W*k/2,W*k/2); mc.fillStyle="#fff";
     (G.cfg.w||[]).forEach((it,i)=>{
       const tp=it[0], land="HCI".includes(tp);
       mc.globalCompositeOperation=land?"destination-out":"source-over";
@@ -3412,23 +3468,24 @@ const Sky = (()=>{
       mc.closePath(); mc.fill();
     });
     mc.globalCompositeOperation="source-over";
-    // 海面：深藍＋聲納橫紋
+    // 海面：深藍＋聲納橫紋（用重複圖樣一次填滿）
+    const pt=mk(1); pt.height=Math.max(4,Math.round(5*dpr)); pt.width=4;
+    { const pg=pt.getContext("2d"); pg.fillStyle="#03182a"; pg.fillRect(0,0,4,pt.height); pg.fillStyle="rgba(0,229,255,.07)"; pg.fillRect(0,0,4,1); }
     const wc=mk(N), wg=wc.getContext("2d");
-    wg.fillStyle="#03182a"; wg.fillRect(0,0,N,N);
-    wg.fillStyle="rgba(0,229,255,.07)"; const sp=Math.max(4,Math.round(5*dpr));
-    for(let y=0;y<N;y+=sp) wg.fillRect(0,y,N,1);
-    wg.globalCompositeOperation="destination-in"; wg.drawImage(m,0,0);
+    wg.fillStyle=wg.createPattern(pt,"repeat"); wg.fillRect(0,0,N,N);
+    wg.globalCompositeOperation="destination-in"; wg.drawImage(m,0,0,N,N);
     g.drawImage(wc,0,0);
-    // 海岸線：遮罩減去侵蝕後的遮罩
-    const e=Math.max(2,Math.round(1.5*dpr));
-    wg.globalCompositeOperation="copy"; wg.drawImage(m,0,0);
-    wg.globalCompositeOperation="destination-in";
-    [[e,0],[-e,0],[0,e],[0,-e]].forEach(([dx,dy])=>wg.drawImage(m,dx,dy));
-    const ec=mk(N), eg=ec.getContext("2d");
-    eg.drawImage(m,0,0); eg.globalCompositeOperation="destination-out"; eg.drawImage(wc,0,0);
-    eg.globalCompositeOperation="source-in"; eg.fillStyle=CY; eg.fillRect(0,0,N,N);
-    g.save(); g.shadowColor=CY; g.shadowBlur=8*dpr; g.globalAlpha=.85; g.drawImage(ec,0,0); g.restore();
-    m.width=wc.width=ec.width=0;   // 釋放暫存
+    // 海岸線：遮罩減去侵蝕後的遮罩（半解析度）
+    const ec=mk(NM), eg=ec.getContext("2d"), er=mk(NM), rg=er.getContext("2d"), e=Math.max(1,Math.round(.8*dpr));
+    rg.drawImage(m,0,0); rg.globalCompositeOperation="destination-in";
+    [[e,0],[-e,0],[0,e],[0,-e]].forEach(([dx,dy])=>rg.drawImage(m,dx,dy));
+    eg.drawImage(m,0,0); eg.globalCompositeOperation="destination-out"; eg.drawImage(er,0,0);
+    eg.globalCompositeOperation="source-in"; eg.fillStyle=CY; eg.fillRect(0,0,NM,NM);
+    // 光暈：縮小再放大當模糊，比 shadowBlur 快很多
+    const bl=mk(Math.ceil(NM/6)); bl.getContext("2d").drawImage(ec,0,0,bl.width,bl.height);
+    g.save(); g.globalCompositeOperation="lighter"; g.globalAlpha=.9; g.drawImage(bl,0,0,N,N); g.globalAlpha=.85; g.drawImage(ec,0,0,N,N); g.restore();
+    m.width=wc.width=ec.width=er.width=bl.width=0;   // 釋放暫存
+    }
 
     wt(g);
     /* 經緯格網 */
@@ -3562,41 +3619,30 @@ const Sky = (()=>{
     return true;
   }
 
-  /* ---- 航機排程：時間槽依序輪用跑道；同一跑道要等前機脫離才放下一架 ----
-     每個時間槽 k 在時刻 τ=k·S 有一架次：進場機 τ 為接地、離場機 τ 為開始起飛滾行。
-     位置全由 (t−τ) 算出，不存狀態。 */
-  const DEP_OUT=17;
-  const SEP=.55;                                           // 最小間隔（km，高度差放大 3 倍計）
+  /* ---- 航機排程：一落一起依序進行 ----
+     落地機停妥消失後 6 秒，離場機才從停機位出現、滑出起飛；
+     離場機開始起飛滾行 20 秒後，下一架落地機才接地。
+     每一架次都記下時刻 τ（落地機＝接地、離場機＝開始起飛滾行），位置全由 (t−τ) 算出。 */
+  const DEP_OUT=17, GAP_AD=6, GAP_DA=20;
   const span=o=>o.dep?[-(o.rw.deps[o.ex%o.rw.deps.length].Tt+1.5),DEP_OUT]:[-ARR_IN,o.rw.arr[o.ex%o.rw.arr.length].Te];
-  // 第 k 槽的架次：先試預定的進／離場，與前幾架有衝突就改另一種，仍衝突就這槽空著（結果快取）
-  function opAt(k){
-    if(k<-3) return null;
-    const M=G.memo||(G.memo=new Map());
-    if(M.has(k)) return M.get(k);
-    const n=G.rw.length, h=hs(k*7919+G.seed*13), rw=G.rw[((k%n)+n)%n], pref=(h%100)<45;
-    let res=null;
-    const ex=(h>>>11)%12;
-    for(const dep of [pref,!pref]){ const o={k,rw,dep,h,ex}; if(clear(o)){ res=o; break; } }
-    M.set(k,res); return res;
-  }
-  function clear(o){
-    const S=G.S, ta=o.k*S, [a0,a1]=span(o);
-    for(let j=1;j<=Math.ceil(75/S);j++){
-      const p=opAt(o.k-j); if(!p) continue;
-      const tb=p.k*S, [b0,b1]=span(p), lo=Math.max(ta+a0,tb+b0), hi=Math.min(ta+a1,tb+b1);
-      for(let t=lo;t<=hi;t+=.4){
-        const A=world(o,t-ta), B=world(p,t-tb);
-        if(A.a<.03||B.a<.03) continue;
-        if(Math.hypot(A.x-B.x,A.y-B.y,(A.z-B.z)*3)<SEP) return false;
-      }
+  function extend(t){
+    const Q=G.seq||(G.seq={list:[],next:G.t0,n:0}), nR=G.rw.length;
+    while(Q.next<t+ARR_IN+1){
+      const n=Q.n++, h=hs(n*7919+G.seed*13), h2=hs(h+77);
+      const A={k:n*2, rw:G.rw[h%nR], dep:false, h, ex:(h>>>11)%12, tau:Q.next};
+      const D={k:n*2+1, rw:G.rw[h2%nR], dep:true, h:h2, ex:(h2>>>11)%12};
+      // 離場機出現時刻＝落地機消失後 GAP_AD 秒；起飛滾行時刻再加上滑行時間
+      D.tau=A.tau+span(A)[1]+GAP_AD-span(D)[0];
+      Q.list.push(A,D);
+      Q.next=D.tau+GAP_DA;
     }
-    return true;
+    return Q.list;
   }
   function ops(t){
-    const S=G.S, out=[];
-    for(let k=Math.floor((t-60)/S); k<=Math.ceil((t+45)/S); k++){
-      const o=opAt(k); if(!o) continue;
-      const dt=t-k*S, [a0,a1]=span(o);
+    const L=extend(t), out=[];
+    for(let i=L.length-1;i>=0;i--){
+      const o=L[i], dt=t-o.tau, [a0,a1]=span(o);
+      if(o.tau<t-80) break;
       if(dt<a0||dt>a1) continue;
       out.push({...o,dt});
     }
@@ -3824,16 +3870,19 @@ const Sky = (()=>{
     fl.forEach(f=>{ const p=f.p, q=P(p.x,p.y,0);
       glyphT(q,f.hd,1.0); ctx.fillStyle=`rgba(0,0,0,${.5*p.a*Math.max(.2,1-p.z*2.2)})`; glyph(); ctx.fill();
       ctx.setTransform(dpr,0,0,dpr,0,0); });
-    // 立體建物（由遠到近）
-    G.boxes.slice().sort((m,n)=>depth(n.c[0],n.c[1])-depth(m.c[0],m.c[1])).forEach(bx=>box(bx,t));
+    // 立體建物與地面上的飛機一起依遠近排序，停在航廈後方的飛機會被航廈擋住
+    const gndF=fl.filter(f=>f.p.z<=.004), airF=fl.filter(f=>f.p.z>.004);
+    G.boxes.map(bx=>({d:depth(bx.c[0],bx.c[1]),bx})).concat(gndF.map(f=>({d:depth(f.p.x,f.p.y),f})))
+      .sort((m,n)=>n.d-m.d).forEach(it=>it.bx?box(it.bx,t):drawAc(it.f));
     // 接地輪胎煙
     fl.forEach(f=>{ const o=f.o; if(o.dep||o.dt<0||o.dt>1.4) return;
       const q=P(f.p.x,f.p.y,0), k=o.dt/1.4, en=o.rw.ends[o.rw.act], tdp=P(en.T[0]+en.dir[0]*.3, en.T[1]+en.dir[1]*.3, 0);
       for(let i=0;i<3;i++){ const r=2+k*(7+i*3); ctx.fillStyle=`rgba(210,225,235,${.35*(1-k)/(i+1)})`;
         ctx.beginPath(); ctx.ellipse(tdp[0]+(q[0]-tdp[0])*.15*i, tdp[1]+(q[1]-tdp[1])*.15*i, r, r*TILT, 0,0,Math.PI*2); ctx.fill(); }
     });
-    // 航機本體
-    fl.forEach(f=>{
+    // 空中的飛機最後畫（永遠在建物之上）
+    airF.forEach(drawAc);
+    function drawAc(f){
       const {o,p,hd}=f, q=P(p.x,p.y,p.z), sc=1+p.z*.9, air=p.z>.004;
       // 空中尾跡
       if(air){ ctx.lineWidth=1.1; ctx.beginPath(); ctx.moveTo(q[0],q[1]);
@@ -3853,7 +3902,7 @@ const Sky = (()=>{
       // 立體機身（3D 多邊形＋光影＋俯仰／坡度）
       plane3d(f,t);
       ctx.globalAlpha=1;
-    });
+    }
     ctx.setTransform(1,0,0,1,0,0); ctx.drawImage(ovl,0,0);
     ctx.setTransform(dpr,0,0,dpr,0,0); rwyTags();   // 疊在霧化層之上，遠端也清楚
     hud(t, live);
@@ -3916,6 +3965,7 @@ const Sky = (()=>{
     code=cd;
     const cfg=SKY[cd]||{n:"SCHEMATIC",r:[[180,3000,0,0]],t:[[0,-.45,.7,.25,.04]]};
     G=prep(cfg,cd);
+    G.t0=simT-30;                        // 從目前時間附近開始排班，切站後馬上就有飛機在場
     try{ fmt=new Intl.DateTimeFormat("en-GB",{timeZone:(typeof TZMAP!=="undefined"&&TZMAP[cd])||(cd==="TSA"?"Asia/Taipei":undefined),hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}); }catch(_){ fmt=null; }
     ltSec=-1; tex=null; lastW=0;
     if(build()){ lastW=wrap.clientWidth; frame(simT, !!raf); }
