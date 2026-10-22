@@ -47,12 +47,28 @@ select,.imp{font:inherit;cursor:pointer;color:var(--ink);background:var(--card);
 .err.ok{border-color:var(--up);color:var(--up)}
 .err button{border:0;background:none;color:inherit;font-size:18px;line-height:1;padding:2px 6px}
 .hint{display:none}
+.mp{position:relative}
+.mbtn{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 32px 7px 10px;position:relative;white-space:nowrap;text-align:left;min-width:150px;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+.mbtn::after{content:'';position:absolute;right:12px;top:50%;width:6px;height:6px;border-right:2px solid var(--mut);border-bottom:2px solid var(--mut);transform:translateY(-70%) rotate(45deg)}
+.mpan{position:absolute;right:0;top:calc(100% + 6px);z-index:5;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;width:290px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.mpan .pre{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.mpan .pre button{border:1px solid var(--line);background:none;border-radius:999px;padding:4px 11px;font-size:12px}
+.mpan .mg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.mpan .mg button{border:1px solid var(--line);background:none;border-radius:8px;padding:9px 0;font-size:13px}
+.mpan button[aria-pressed=true]{background:var(--acc);color:var(--on);border-color:var(--acc)}
+.mpan button:disabled{opacity:.35;cursor:default}
+.mpan .ft{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--mut)}
+.mpan .ft button{border:0;background:var(--acc);color:var(--on);border-radius:6px;padding:6px 16px}
+.kpi .tag{font-size:11px;margin-left:6px;padding:0 6px;border-radius:4px;background:var(--bg);color:var(--mut)}
+tr.sum td{font-weight:700;border-top:2px solid var(--line);background:var(--bg)}
 @media (max-width:640px){
 h1{font-size:20px}
 header{align-items:stretch}
 .ctl{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .ctl .imp{grid-column:1/-1;order:9}
 .ctl select{width:100%;min-height:40px}
+.mp{width:100%}.mbtn{width:100%;min-width:0;max-width:none;min-height:40px}
+.mpan{width:min(300px,calc(100vw - 32px))}
 .seg{grid-column:1/-1;display:flex}
 .seg button{flex:1;padding:7px 4px;min-height:44px}
 .seg small{font-size:10px}
@@ -80,7 +96,7 @@ tr.cur td{background:var(--bg);font-weight:700}
 .lg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
 </style></head><body><div class="w">
 <header><div><h1>航班營運儀表板</h1><div class="sub" id="sub"></div></div>
-<div class="ctl"><button class="imp" id="imp" title="選擇新的 Excel 檔案，直接更新畫面上的數據">匯入 Excel</button><input type="file" id="fi" accept=".xlsx" hidden><select id="yr" aria-label="年份"></select><select id="mo" aria-label="月份"></select><div class="seg" id="seg" role="group" aria-label="航向"></div></div></header>
+<div class="ctl"><button class="imp" id="imp" title="選擇新的 Excel 檔案，直接更新畫面上的數據">匯入 Excel</button><input type="file" id="fi" accept=".xlsx" hidden><select id="yr" aria-label="年份"></select><div class="mp" id="mp"><button class="mbtn" id="mo" aria-haspopup="true" aria-expanded="false" aria-label="月份"></button><div class="mpan" id="mpan" hidden></div></div><div class="seg" id="seg" role="group" aria-label="航向"></div></div></header>
 <div class="err" id="err" hidden><span id="errm"></span><button id="errx" aria-label="關閉">×</button></div>
 <section class="kpis" id="kpis"></section>
 <section class="card" style="margin-bottom:14px">
@@ -110,14 +126,29 @@ function nd(g,m,y){if(g!='ALL')return one(g,m,y);const a=one('OB',m,y),b=one('IB
 return{n:a.n.map((v,i)=>ok(i)?v+b.n[i]:null),d:a.d.map((v,i)=>ok(i)?(m.k=='s'?1:v+b.d[i]):null)}}
 const val=(o,i)=>o.n[i]==null||!o.d[i]?null:o.n[i]/o.d[i];
 const ser=(g,m,y)=>{const o=nd(g,m,y);return o.n.map((_,i)=>val(o,i))};
-function ytd(g,m,y,e,ref){const o=nd(g,m,y),r=ref==null?null:nd(g,m,ref);let n=0,d=0;for(let i=0;i<=e;i++)if(o.n[i]!=null&&o.d[i]&&(!r||(r.n[i]!=null&&r.d[i]))){n+=o.n[i];d+=o.d[i]}return d?(m.k=='s'?n:n/d):null}
+function aggX(g,m,y,ix,ref){const o=nd(g,m,y),r=ref==null?null:nd(g,m,ref);let n=0,d=0,c=0;for(const i of ix)if(o.n[i]!=null&&o.d[i]&&(!r||(r.n[i]!=null&&r.d[i]))){n+=o.n[i];d+=o.d[i];c++}return[c?(m.k=='s'?n:n/d):null,c,n]}
+const ytd=(g,m,y,e,ref)=>aggX(g,m,y,Array.from({length:e+1},(_,i)=>i),ref)[0];
 const fm=(f,v)=>v==null?'–':f=='i'?Math.round(v).toLocaleString('en-US'):f=='p'?(v*100).toFixed(1)+'%':f=='q'?(v*100).toFixed(2)+'%':f=='d'?v.toFixed(2):f=='e'?v.toFixed(1):(v/1e6).toFixed(1)+'M';
 function dl(m,c,p){if(c==null||p==null||(!'pq'.includes(m.f)&&!p))return{t:'–',c:''};const pc='pq'.includes(m.f),x=pc?(c-p)*100:(c/p-1)*100;
 return{t:(x>=0?'▲ ':'▼ ')+Math.abs(x).toFixed(1)+(pc?' pp':'%'),c:(x>=0)!=!!m.bad?'up':'dn'}}
 
-let g='ALL',mid='PAX',mid2='PAX',S,Yr,E,src='';const LI=y=>y==Y[Y.length-1]?E:11;const yc=y=>[cv('--y24'),cv('--y25'),cv('--y26')][Math.max(0,Math.min(2,2-(Y[Y.length-1]-y)))];
+let g='ALL',mid='PAX',mid2='PAX',S,SEL=[],Yr,E,src='';const LI=y=>y==Y[Y.length-1]?E:11;const yc=y=>[cv('--y24'),cv('--y25'),cv('--y26')][Math.max(0,Math.min(2,2-(Y[Y.length-1]-y)))];
 const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-function kpis(){$('kpis').innerHTML=K.map(id=>{const m=gm(id),a=ser(g,m,Yr)[S],b=ser(g,m,Yr-1)[S],d=dl(m,a,b),ya=ytd(g,m,Yr,S,Yr-1),yb=ytd(g,m,Yr-1,S,Yr),y0=ytd(g,m,Yr,S),yd=dl(m,ya,yb);
+const rng=a=>{const r=[];let s=a[0],p=a[0];for(let k=1;k<=a.length;k++){const v=a[k];if(v===p+1){p=v;continue}r.push(s==p?String(s+1):(s+1)+'–'+(p+1));s=p=v}return r.join('、')};
+const isAll=()=>SEL.length==LI(Yr)+1,selLbl=()=>SEL.length==1?`${Yr} 年 ${SEL[0]+1} 月`:isAll()?`${Yr} 年 全部月份`:`${Yr} 年 ${rng(SEL)} 月`;
+const RG=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i).filter(i=>i<=LI(Yr));
+const pre=k=>k=='all'?RG(0,LI(Yr)):k=='last'?[LI(Yr)]:k[0]=='q'?RG(+k[1]*3,+k[1]*3+2):RG(+k[1]*6,+k[1]*6+5);
+const same=(a,b)=>a.length==b.length&&a.every((v,i)=>v==b[i]);
+function setSel(s){SEL=s;S=s[s.length-1];all()}
+function mpOpen(o){$('mpan').hidden=!o;$('mo').setAttribute('aria-expanded',o)}
+function panel(){const P=[['all','全部月份'],['last','最新月'],['q0','Q1'],['q1','Q2'],['q2','Q3'],['q3','Q4'],['h0','上半年'],['h1','下半年']];
+return`<div class="pre">${P.map(([k,t])=>{const ix=pre(k);return`<button data-pre="${k}" aria-pressed="${ix.length>0&&same(ix,SEL)}"${ix.length?'':' disabled'}>${t}</button>`}).join('')}</div>`+
+`<div class="mg">${MN.map((n,i)=>`<button data-mi="${i}" aria-pressed="${SEL.includes(i)}"${i>LI(Yr)?' disabled':''}>${n}</button>`).join('')}</div>`+
+`<div class="ft"><span>已選 ${SEL.length} 個月・點月份可複選</span><button data-mdone="1">完成</button></div>`}
+function kpis(){if(SEL.length>1){$('kpis').innerHTML=K.map(id=>{const m=gm(id),[v0,c,n0]=aggX(g,m,Yr,SEL),a=aggX(g,m,Yr,SEL,Yr-1)[0],b=aggX(g,m,Yr-1,SEL,Yr)[0],d=dl(m,a,b),sv=ser(g,m,Yr),vs=SEL.map(i=>sv[i]).filter(x=>x!=null);
+const s2=!c?'':m.k=='s'?`月平均 ${fm(m.f,n0/c)}`:`各月 ${fm(m.f,Math.min(...vs))} – ${fm(m.f,Math.max(...vs))}`;
+return`<div class="card kpi"><div class="l">${m.t}<span class="tag">${m.k=='s'?'合計':'期間'}</span></div><div class="v">${fm(m.f,v0)}</div><div class="s"><span class="${d.c}">${d.t}</span> 較去年同期</div><div class="s">${s2}</div></div>`}).join('');return}
+$('kpis').innerHTML=K.map(id=>{const m=gm(id),a=ser(g,m,Yr)[S],b=ser(g,m,Yr-1)[S],d=dl(m,a,b),ya=ytd(g,m,Yr,S,Yr-1),yb=ytd(g,m,Yr-1,S,Yr),y0=ytd(g,m,Yr,S),yd=dl(m,ya,yb);
 return`<div class="card kpi"><div class="l">${m.t}</div><div class="v">${fm(m.f,a)}</div><div class="s"><span class="${d.c}">${d.t}</span> 較去年同月</div><div class="s">1–${S+1}月累計 ${fm(m.f,y0)} <span class="${yd.c}">${yd.t}</span></div></div>`}).join('')}
 const tk=(lo,hi,n=5)=>{const s=(hi-lo)/n||1,p=Math.pow(10,Math.floor(Math.log10(s))),f=s/p,st=(f<=1?1:f<=2?2:f<=5?5:10)*p,r=[];for(let v=Math.floor(lo/st)*st;v<=Math.ceil(hi/st)*st+st/2;v+=st)r.push(+v.toPrecision(12));return r};
 const bx=id=>{const e=$(id);return[e,Math.max(e.clientWidth,240),e.clientHeight||300]};const NW=W=>W<520,ML=(i,W)=>NW(W)?String(i+1):MN[i];
@@ -126,18 +157,18 @@ function c1draw(){const m=gm(mid),v=ser(g,m,Yr),[e,W,H]=bx('c1'),l=NW(W)?54:72,r
 $('t1').textContent=m.t+'：'+Yr+' 年逐月走勢（'+G[g]+'）';
 if(!a.length){e.innerHTML='<p class="note">此年度尚無資料</p>';return}
 const mn=Math.min(...a),mx=Math.max(...a),pd=(mx-mn)*.2||Math.abs(mx)*.05||1,T=tk(mn>=0?Math.max(0,mn-pd):mn-pd,mx+pd),lo=T[0],hi=T[T.length-1],py=x=>t+ph*(1-(x-lo)/(hi-lo)),px=i=>l+pw*(i+.5)/12;
-let s=T.map(x=>`<line x1="${l}" x2="${W-r}" y1="${py(x)}" y2="${py(x)}" stroke="${ln}"/>`+T_(l-8,py(x)+4,fm(m.f,x),'end',tx)).join('')+MN.map((n,i)=>T_(px(i),H-8,ML(i,W),'middle',tx)).join('');
+let s=(SEL.length>1?SEL.map(i=>`<rect x="${l+pw*i/12}" y="${t}" width="${pw/12}" height="${ph}" fill="${cv('--acc')}" opacity=".09"/>`).join(''):'')+T.map(x=>`<line x1="${l}" x2="${W-r}" y1="${py(x)}" y2="${py(x)}" stroke="${ln}"/>`+T_(l-8,py(x)+4,fm(m.f,x),'end',tx)).join('')+MN.map((n,i)=>T_(px(i),H-8,ML(i,W),'middle',tx)).join('');
 let d='',pen=0;v.forEach((x,i)=>{if(x==null){pen=0;return}d+=(pen?'L':'M')+px(i)+' '+py(x);pen=1});
 s+=`<path d="${d}" fill="none" stroke="${co}" stroke-width="3"/>`;
-v.forEach((x,i)=>{if(x!=null)s+=`<circle cx="${px(i)}" cy="${py(x)}" r="${i==S?7:3.5}" fill="${co}"/>`});
-if(v[S]!=null)s+=T_(px(S),py(v[S])-13,fm(m.f,v[S]),'middle',cv('--ink'),1);
+v.forEach((x,i)=>{if(x!=null)s+=`<circle cx="${px(i)}" cy="${py(x)}" r="${SEL.includes(i)?(SEL.length>1?5.5:7):3.5}" fill="${co}"/>`});
+if(SEL.length==1&&v[S]!=null)s+=T_(px(S),py(v[S])-13,fm(m.f,v[S]),'middle',cv('--ink'),1);
 s+=v.map((x,i)=>`<rect data-i="${i}" x="${l+pw*i/12}" y="${t}" width="${pw/12}" height="${ph}" fill="transparent"/>`).join('');
 e.innerHTML=`<svg width="${W}" height="${H}" role="img" aria-label="${m.t}">${s}</svg><div class="tip" hidden></div>`;e._tip=v.map((x,i)=>Yr+' 年 '+MN[i]+'\n'+m.t+'：'+fm(m.f,x));e._x=i=>l+pw*(i+.5)/12;e._w=pw/12}
 function c2draw(){const m=gm(mid2),[e,W,H]=bx('c2'),l=NW(W)?54:72,r=16,t=14,b=26,pw=W-l-r,ph=H-t-b,tx=cv('--mut'),ln=cv('--line'),Y3=Y.slice(-3),col=Y3.map(yc),P=Y3.map(y=>ser(g,m,y)),a=P.flat().filter(x=>x!=null);
 $('t2').textContent=m.t+'：各月份年度比較（'+G[g]+'）';
 if(!a.length){e.innerHTML='<p class="note">尚無資料</p>';return}
 const mn=Math.min(...a),mx=Math.max(...a),tr=m.id=='LF'||m.id=='OTP'||m.id=='OTP2',T=tk(tr?mn-(mx-mn)*.6:0,mx),lo=T[0],hi=T[T.length-1],py=x=>t+ph*(1-(x-lo)/(hi-lo)),gw=pw/12,bw=gw*.8/Y3.length;
-let s=T.map(x=>`<line x1="${l}" x2="${W-r}" y1="${py(x)}" y2="${py(x)}" stroke="${ln}"/>`+T_(l-8,py(x)+4,fm(m.f,x),'end',tx)).join('');
+let s=(SEL.length<12?SEL.map(i=>`<rect x="${l+gw*i}" y="${t}" width="${gw}" height="${ph}" fill="${cv('--acc')}" opacity=".09"/>`).join(''):'')+T.map(x=>`<line x1="${l}" x2="${W-r}" y1="${py(x)}" y2="${py(x)}" stroke="${ln}"/>`+T_(l-8,py(x)+4,fm(m.f,x),'end',tx)).join('');
 for(let i=0;i<12;i++){s+=T_(l+gw*(i+.5),H-8,ML(i,W),'middle',tx);
 Y3.forEach((y,j)=>{const v=P[j][i];if(v!=null)s+=`<rect x="${l+gw*i+gw*.1+j*bw}" y="${py(v)}" width="${bw*.9}" height="${t+ph-py(v)}" fill="${col[j]}"/>`});
 s+=`<rect data-i="${i}" x="${l+gw*i}" y="${t}" width="${gw}" height="${ph}" fill="transparent"/>`}
@@ -155,19 +186,27 @@ document.addEventListener('pointerdown',ev=>{['c1','c2'].forEach(id=>{if(!$(id).
 function table(){$('t3').textContent=Yr+' 年逐月明細（'+G[g]+'）';const C=['FLT','CFG','PAX','LF','OTP','OTP2','NSR','TRR','BGT','BGW','KGP','APT','GHSP'].map(gm);
 let h='<tr><th>月份</th>'+C.map(m=>'<th>'+m.t+'</th>').join('')+'<th>旅客數 YoY</th></tr>';
 for(let i=0;i<=LI(Yr);i++){const pa=ser(g,gm('PAX'),Yr)[i],pb=ser(g,gm('PAX'),Yr-1)[i],d=dl(gm('PAX'),pa,pb);
-h+='<tr'+(i==S?' class="cur"':'')+'><td>'+MN[i]+'</td>'+C.map(m=>'<td>'+fm(m.f,ser(g,m,Yr)[i])+'</td>').join('')+'<td class="'+d.c+'">'+d.t+'</td></tr>'}
+h+='<tr'+(SEL.includes(i)&&!(SEL.length>1&&isAll())?' class="cur"':'')+'><td>'+MN[i]+'</td>'+C.map(m=>'<td>'+fm(m.f,ser(g,m,Yr)[i])+'</td>').join('')+'<td class="'+d.c+'">'+d.t+'</td></tr>'}
+if(SEL.length>1){const P=gm('PAX'),d=dl(P,aggX(g,P,Yr,SEL,Yr-1)[0],aggX(g,P,Yr-1,SEL,Yr)[0]);
+h+='<tr class="sum"><td>'+(isAll()?'全部合計':rng(SEL)+'月合計')+'</td>'+C.map(m=>'<td>'+fm(m.f,aggX(g,m,Yr,SEL)[0])+'</td>').join('')+'<td class="'+d.c+'">'+d.t+'</td></tr>'}
 $('tb').innerHTML=h}
-function ui(){$('lg2').innerHTML=Y.slice(-3).map(y=>`<span><i style="background:${yc(y)}"></i>${y}</span>`).join('');$('chips2').innerHTML=M.map(m=>`<button aria-pressed="${m.id==mid2}" data-m2="${m.id}">${m.t}</button>`).join('');$('yr').innerHTML=Y.map(y=>`<option value="${y}"${y==Yr?' selected':''}>${y} 年</option>`).join('');$('mo').innerHTML=Array.from({length:LI(Yr)+1},(_,i)=>`<option value="${i}"${i==S?' selected':''}>${Yr} 年 ${i+1} 月</option>`).join('');$('seg').innerHTML=Object.keys(G).map(k=>`<button aria-pressed="${k==g}" data-g="${k}">${G[k]}<small>${SB[k]}</small></button>`).join('');
+function ui(){$('lg2').innerHTML=Y.slice(-3).map(y=>`<span><i style="background:${yc(y)}"></i>${y}</span>`).join('');$('chips2').innerHTML=M.map(m=>`<button aria-pressed="${m.id==mid2}" data-m2="${m.id}">${m.t}</button>`).join('');$('yr').innerHTML=Y.map(y=>`<option value="${y}"${y==Yr?' selected':''}>${y} 年</option>`).join('');$('mo').textContent=selLbl();$('mpan').innerHTML=panel();$('seg').innerHTML=Object.keys(G).map(k=>`<button aria-pressed="${k==g}" data-g="${k}">${G[k]}<small>${SB[k]}</small></button>`).join('');
 $('chips').innerHTML=M.map(m=>`<button aria-pressed="${m.id==mid}" data-m="${m.id}">${m.t}</button>`).join('')}
 const pr=(box,k,v)=>$(box).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset[k]==v));
-function all(){ui();$('sub').textContent=`資料更新至 ${Y[Y.length-1]} 年 ${E+1} 月　·　${G[g]}${src}`;kpis();c1draw();c2draw();table()}
-$('yr').addEventListener('change',e=>{Yr=+e.target.value;S=Math.min(S,LI(Yr));all()});
-$('mo').addEventListener('change',e=>{S=+e.target.value;all()});
-document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.g){g=b.dataset.g;all()}else if(b.dataset.m){mid=b.dataset.m;pr('chips','m',mid);c1draw()}else if(b.dataset.m2){mid2=b.dataset.m2;pr('chips2','m2',mid2);c2draw()}});
+function all(){ui();$('sub').textContent=`資料更新至 ${Y[Y.length-1]} 年 ${E+1} 月　·　${G[g]}　·　檢視 ${selLbl()}${src}`;kpis();c1draw();c2draw();table()}
+$('yr').addEventListener('change',e=>{const wa=isAll();Yr=+e.target.value;let s=wa?pre('all'):SEL.filter(i=>i<=LI(Yr));setSel(s.length?s:[LI(Yr)])});
+document.addEventListener('pointerdown',ev=>{if(!$('mpan').hidden&&!$('mp').contains(ev.target))mpOpen(false)});
+document.addEventListener('keydown',ev=>{if(ev.key=='Escape')mpOpen(false)});
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+if(b.id=='mo'){mpOpen($('mpan').hidden);return}
+if(b.dataset.mi!=null){const i=+b.dataset.mi;setSel(SEL.includes(i)?(SEL.length>1?SEL.filter(x=>x!=i):SEL):[...SEL,i].sort((a,c)=>a-c));return}
+if(b.dataset.pre){setSel(pre(b.dataset.pre));return}
+if(b.dataset.mdone){mpOpen(false);return}
+if(b.dataset.g){g=b.dataset.g;all()}else if(b.dataset.m){mid=b.dataset.m;pr('chips','m',mid);c1draw()}else if(b.dataset.m2){mid2=b.dataset.m2;pr('chips2','m2',mid2);c2draw()}});
 const X=s=>new DOMParser().parseFromString(s,'application/xml'),MO=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'],ZN=new Set(['EB','APT','GHSP','OTP','OTP2']),
 MX={'FLT':'FLT','CFG':'CFG','PAX':'PAX','N/S(TL)':'NS','Tran.(TL)':'TRAN','BG (PC)':'BGPC','BG (KG)':'BGKG','EB (TWD)':'EB','APT FEE FNL (TWD)':'APT','GHSP FEE FNL (TWD)':'GHSP','OTP(ALL)':'OTP','OTP(P/G/C)':'OTP2','OTP(P/G/K/C)':'OTP2'};
 function lastM(y){const a=(D.OB.PAX[y]||NA()),b=(D.IB.PAX[y]||NA());let e=-1;for(let i=0;i<12;i++)if(a[i]!=null||b[i]!=null)e=i;return e}
-function init(){Y=[...new Set([...Object.keys(D.OB.PAX),...Object.keys(D.IB.PAX)])].map(Number).filter(y=>lastM(y)>=0).sort((a,b)=>a-b);if(!Y.length)throw Error('檔案裡沒有任何旅客數資料');const mx=Y[Y.length-1];E=lastM(mx);Yr=mx;S=E}
+function init(){Y=[...new Set([...Object.keys(D.OB.PAX),...Object.keys(D.IB.PAX)])].map(Number).filter(y=>lastM(y)>=0).sort((a,b)=>a-b);if(!Y.length)throw Error('檔案裡沒有任何旅客數資料');const mx=Y[Y.length-1];E=lastM(mx);Yr=mx;S=E;SEL=[E]}
 async function unzip(buf){const u=new Uint8Array(buf),dv=new DataView(buf),td=new TextDecoder();let e=u.length-22;while(e>=0&&dv.getUint32(e,true)!=0x06054b50)e--;if(e<0)throw Error('不是有效的 xlsx 檔案');
 const n=dv.getUint16(e+10,true);let p=dv.getUint32(e+16,true);const o={};
 for(let i=0;i<n;i++){const me=dv.getUint16(p+10,true),cs=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),xl=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),off=dv.getUint32(p+42,true),nm=td.decode(u.subarray(p+46,p+46+nl));p+=46+nl+xl+cl;
