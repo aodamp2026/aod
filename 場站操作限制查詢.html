@@ -371,6 +371,13 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 .sx-row.us{background:rgba(127,211,240,.06);box-shadow:inset 3px 0 0 #7FD3F0}
 .sx-t{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
 .sx-t .hm{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.sx-t.inb .hm{font-size:22px;font-weight:800}
+.sx-ahd{display:flex;align-items:baseline;gap:7px;white-space:nowrap;flex-basis:100%}
+.sx-alab{font-size:12px;font-weight:800;color:var(--ok);border:1px solid currentColor;border-radius:6px;padding:0 6px;align-self:center}
+.sx-alab.dep{color:var(--gold)}
+.sx-dep2{flex-basis:100%;font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 7px;align-items:baseline}
+.sx-dep2 b{color:var(--sub,var(--text));font-weight:700;font-variant-numeric:tabular-nums}
+.sx-dd2{font-size:11.5px;color:var(--gold);font-weight:700}
 .sx-t .fl{font-weight:700;color:var(--gold);letter-spacing:.03em}
 .sx-t .st{font-size:11.5px;color:var(--muted)}
 .sx-t .to{flex-basis:100%;font-size:14px}
@@ -746,7 +753,7 @@ html[data-skin] .sky{ border-color:var(--line); }
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-21j（轉機人數移到 KPI）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-22b（出發／抵台標籤）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4675,15 +4682,35 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   function depHtml(r){
     var d = depInfo(r); r._d = d;
     var loc = !isBase(r.from) && localAt(d.ms, r.from), ld = loc ? localDay(d.ms, r.from) : "";
-    return '<span class="hm">' + (loc ? loc.hm : depClock(d.ms, r)) + '</span>' + (loc ? '<span class="sx-dd" title="' + esc(r.from) + ' 當地出發日期">' + ld + " 當地出發</span>" : "") + '<span class="sx-k2 ' + d.kind + '" title="' + (d.live ? "機場即時資料" : "系統清單") + '">' + { act:"實際", est:"預估", sch:"表定" }[d.kind] + (d.live ? "・機場" : "") + "</span>";
+    return (isBase(r.from) ? '<span class="sx-alab dep">出發</span>' : "") + '<span class="hm">' + (loc ? loc.hm : depClock(d.ms, r)) + '</span>' + (loc ? '<span class="sx-dd" title="' + esc(r.from) + ' 當地出發日期">' + ld + " 當地出發</span>" : "") + '<span class="sx-k2 ' + d.kind + '" title="' + (d.live ? "機場即時資料" : "系統清單") + '">' + { act:"實際", est:"預估", sch:"表定" }[d.kind] + (d.live ? "・機場" : "") + "</span>";
   }
   /* 外站回台：抵台時間（AIRS 實際／預估優先，否則以表定抵達＋起飛延誤推算） */
-  function arrLine(r, d){
-    if(isBase(r.from) || !r.sta) return "";
-    var lab = isBase(r.to) ? "抵台 " : "抵達 " + esc(r.to) + " ", ms, kind;
-    var aa = airsFind("A", r.flt, r.sta);
+  function arrInfo(r, d){
+    var aa = airsFind("A", r.flt, r.sta), ms, kind;
     if(aa && (aa.a || aa.e)){ ms = aa.a || aa.e; kind = aa.a ? "act" : "est"; }
     else { var dl = d && d.ms && r.std ? d.ms - r.std : 0; ms = r.sta + dl; kind = dl ? "est" : "sch"; }
+    return { ms:ms, kind:kind };
+  }
+  /* 外站回台（抵達台灣）：抵台時間放大當主角，出發改成下方小字 */
+  function inHead(r){
+    var d = depInfo(r); r._d = d;
+    var a = arrInfo(r, d), K = { act:"實際", est:"預估", sch:"表定" };
+    var loc = localAt(d.ms, r.from), ld = loc ? localDay(d.ms, r.from) : "";
+    var dl = r.std && d.kind !== "sch" ? Math.round((d.ms - r.std)/60000) : 0;
+    var sa = r.sta && a.ms !== r.sta ? parts(r.sta).hm : "";
+    return '<span class="sx-ahd"><span class="sx-alab">抵台</span><span class="hm">' + parts(a.ms).hm + "</span>" +
+      '<span class="sx-k2 ' + a.kind + '">' + K[a.kind] + "</span>" +
+      '<span class="fl">' + esc(r.flt) + "</span>" + (r.st !== "J" ? '<span class="st">(' + esc(r.st) + ")</span>" : "") + "</span>" +
+      (sa ? '<span class="sx-std">表定抵台 ' + sa + "</span>" : "") +
+      '<span class="sx-dep2">出發 <b>' + (loc ? loc.hm : parts(d.ms).hm) + "</b>" +
+        (ld ? '<span class="sx-dd2">' + ld + " 當地</span>" : "") +
+        '<span class="sx-k2 ' + d.kind + '">' + K[d.kind] + (d.live ? "・機場" : "") + "</span>" +
+        (dl ? '<span class="sx-dly' + (dl < 0 ? " early" : "") + '">' + (dl > 0 ? "晚 " : "早 ") + Math.abs(dl) + " 分</span>" : "") + "</span>";
+  }
+  function arrLine(r, d){
+    if(isBase(r.from) || !r.sta) return "";
+    var lab = isBase(r.to) ? "抵台 " : "抵達 " + esc(r.to) + " ";
+    var ai = arrInfo(r, d), ms = ai.ms, kind = ai.kind;
     return '<span class="sx-std' + (isBase(r.to) ? " sx-arr" : "") + '">' + lab + dayHm(ms) + ' <span class="sx-k2 ' + kind + '">' + { act:"實際", est:"預估", sch:"表定" }[kind] + "</span></span>";
   }
   function depStd(r){
@@ -4808,8 +4835,8 @@ renderList(); renderDetail(); window.scrollTo({top:0});
           var bk = 0, cp = 0, hasB = false;
           [0,1,2,3].forEach(function(i){ if(r.pax && r.pax[i] != null){ bk += +r.pax[i] || 0; hasB = true; } if(r.cap && r.cap[i]) cp += +r.cap[i] || 0; });
           return '<div class="sx-row' + (u ? " us" : "") + '">' +
-            '<div class="sx-t">' + depHtml(r) +
-              '<span class="fl">' + esc(r.flt) + "</span>" + (r.st !== "J" ? '<span class="st">(' + esc(r.st) + ")</span>" : "") + depStd(r) +
+            '<div class="sx-t' + (r.sta && !isBase(r.from) && isBase(r.to) ? " inb" : "") + '">' + (r.sta && !isBase(r.from) && isBase(r.to) ? inHead(r) : depHtml(r) +
+              '<span class="fl">' + esc(r.flt) + "</span>" + (r.st !== "J" ? '<span class="st">(' + esc(r.st) + ")</span>" : "") + depStd(r)) +
               '<span class="to">' + (!isBase(r.from) ? "<b>" + esc(r.from) + "</b> <i>" + esc(apt(r.from)) + "</i> → " + esc(r.to)
                                          : (r.from !== "TPE" ? '<i>' + esc(r.from) + " →</i> " : "") + "<b>" + esc(r.to) + "</b> <i>" + esc(apt(r.to)) + "</i>") +
               (u ? '<span class="sx-us">美國</span>' : "") + "</span></div>" +
@@ -5782,7 +5809,7 @@ const I18N = (()=>{
     "推算":"Est.","裕度":"Margin","延誤":"Delay","取消":"Cancelled","調機":"Ferry","回航":"RTB","地停待修":"AOG","地停":"Ground",
     "轉降":"Diversion","下客":"Deplane","入境":"Entry","加油":"Fuel","上餐":"Catering","免稅":"Duty-free","組員":"Crew","宵禁":"Curfew",
     "場站作業":"Station ops","場站":"Station","出發站":"Origin","抵達站":"Arrival stn","出發":"Depart","抵達":"Arrival","抵台":"Arr. TW",
-    "轉機人數合計":"Transfer pax total","班已填":" flts filled","轉機人數":"Transfer pax","其中轉機":"incl. transfer","轉機":"Transfer","上傳 Excel":"Upload Excel","下載範本":"Download template","清除全部":"Clear all","當地出發":"local dep.","抵台日期":"Arr. date (TW)","依抵台日期・外站出發時間為當地時間":"By Taiwan arrival date · departure times local","總空位（全艙）":"Total avail. (all cabins)","總訂位（TTL）":"Total booked (TTL)","全部日期":"All dates","班中":" flts,","目前畫面":"Current view","搜尋結果":"Search results","搜尋航班":"Search flights","輸入編輯碼":"Enter edit code","編輯碼":"Edit code","已與大家同步":"Synced","同步中":"Syncing","唯讀":"Read-only","僅存本機（中繼尚未啟用轉機同步）":"Local only (relay sync not enabled)","臨時":"Temp","起飛":"Dep","接飛":"Onward","直飛":"Direct","回台後":"after return","折返":"Return","機號":"Reg","日期":"Date","飛時":"Flight time",
+    "轉機人數合計":"Transfer pax total","班已填":" flts filled","轉機人數":"Transfer pax","其中轉機":"incl. transfer","轉機":"Transfer","上傳 Excel":"Upload Excel","下載範本":"Download template","清除全部":"Clear all","抵台":"Arr TW","當地出發":"local dep.","抵台日期":"Arr. date (TW)","依抵台日期・外站出發時間為當地時間":"By Taiwan arrival date · departure times local","總空位（全艙）":"Total avail. (all cabins)","總訂位（TTL）":"Total booked (TTL)","全部日期":"All dates","班中":" flts,","目前畫面":"Current view","搜尋結果":"Search results","搜尋航班":"Search flights","輸入編輯碼":"Enter edit code","編輯碼":"Edit code","已與大家同步":"Synced","同步中":"Syncing","唯讀":"Read-only","僅存本機（中繼尚未啟用轉機同步）":"Local only (relay sync not enabled)","臨時":"Temp","起飛":"Dep","接飛":"Onward","直飛":"Direct","回台後":"after return","折返":"Return","機號":"Reg","日期":"Date","飛時":"Flight time",
     "頭等":"First","商務":"Business","豪經":"Prem Econ","經濟":"Economy","空位":"Seats","超賣":"Oversold","跨日":"next day",
     "今天":"Today","明天":"Tomorrow","後天":"In 2 days","昨天":"Yesterday","之後":"after","更新":"updated","未知":"Unknown",
     "增加":"Add","移除":"Remove","減少":"Decrease","確定":"OK","關閉":"Closed","請確認":"Please confirm","的航班":" flights",
