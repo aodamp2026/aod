@@ -262,6 +262,7 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 .cf-no{box-shadow:inset 3px 0 0 var(--no)} .cf-no .verdict{color:var(--no)}
 .cf-na{box-shadow:inset 3px 0 0 var(--na)} .cf-na .verdict{color:var(--na)}
 .stn input{text-transform:uppercase;letter-spacing:.09em;font-weight:700}
+#srStn,#srDst,#srFlt{text-transform:uppercase}
 .addleg{
   width:100%;padding:12px;border:1px dashed var(--line);background:transparent;color:var(--muted);
   border-radius:var(--r);font:inherit;font-size:14px;cursor:pointer
@@ -645,6 +646,30 @@ html[data-skin] dialog.sr{ box-shadow:0 24px 60px rgba(0,0,0,.25); }
 html[data-skin] .f input::-webkit-calendar-picker-indicator, html[data-skin] .srtime input::-webkit-calendar-picker-indicator{ filter:none; }
 html[data-skin] .sky{ border-color:var(--line); }
 </style>
+<style>
+/* ---------- 空位查詢篩選：2×2 下拉選單（方案 B） ---------- */
+#sxFilt{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
+#sxFilt .sx-dir{grid-column:1/-1;margin-bottom:4px}
+#sxFilt .sx-f{display:block;margin:0;position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:7px 34px 7px 12px;min-width:0}
+#sxFilt .sx-f[hidden]{display:none}
+#sxFilt .sx-f>span{display:block;padding:0;font-size:11.5px;color:var(--muted);line-height:1.3}
+#sxFilt .sx-f .sx-chips{display:none}
+#sxFilt .sx-f::after{content:"";position:absolute;right:13px;top:50%;width:8px;height:8px;border-right:2px solid var(--gold);border-bottom:2px solid var(--gold);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+#sxFilt .sx-sel{appearance:none;-webkit-appearance:none;width:100%;border:0;background:transparent;color:var(--text);font:inherit;font-size:15px;font-weight:700;padding:2px 0 0;margin:0;cursor:pointer;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
+#sxFilt .sx-sel,#sxFilt .sx-sel:focus,#sxFilt .sx-sel:focus-visible{outline:none;box-shadow:none}
+/* 選取中的外框改畫在整格卡片上，不再壓到上方的標題文字 */
+#sxFilt .sx-f:focus-within{border-color:var(--gold);box-shadow:0 0 0 2px rgba(168,120,44,.25)}
+#sxFilt .sx-sel:disabled{color:var(--dim);cursor:default}
+#sxFilt .sx-f:has(.sx-sel:disabled){opacity:.7}
+#sxFilt .sx-f:has(.sx-sel:disabled)::after{opacity:.4}
+@media (min-width:821px){ #sxFilt{grid-template-columns:repeat(4,minmax(0,1fr))} }
+#sxMain > .sx-f:has(#sxOnly){display:block}
+/* 場站限制：有宵禁的場站在按鈕右上角加紅點 */
+.code.has-cf{position:relative}
+.code.has-cf::after{content:"";position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:#c52233;box-shadow:0 0 0 2px var(--panel,#FFFCF6)}
+.code.has-cf[aria-pressed="true"]::after{box-shadow:0 0 0 2px rgba(255,255,255,.85)}
+#sxMain > .sx-f:has(#sxOnly) > span{display:none}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -712,7 +737,6 @@ html[data-skin] .sky{ border-color:var(--line); }
 
 <!-- ===== 到離試算 ===== -->
 <section id="p-calc" role="tabpanel" aria-labelledby="t-calc" class="hidden">
-  <p class="calcnote">以場站為單位往下串接：每一格代表航路上的一個場站，每個場站只填一次。第一站填出發時間與飛時；之後每站（含最後一站）填時差、抵達→靠檔與地停，系統自動推算抵達與可再起飛時間，並比對該站宵禁算出剩餘裕度。每站的「起飛 ETD」都可用 − ＋ 微調作業裕度（可按「回自動」還原），飛時也可先設好，按「＋ 增加下一個場站」即直接串接下一段。欄位可直接輸入，也可用 − ＋ 微調（飛時 20 分鐘一階、其餘時間 10 分鐘一階、時差 1 小時一階），或用鍵盤上下鍵。時差填「本站時間 − 上一站時間」，例如 TPE 飛 NRT 填 +1。</p>
   <datalist id="codes"></datalist>
   <div id="legs"></div>
   <button class="addleg" id="addLeg">＋ 增加下一個場站</button>
@@ -753,7 +777,7 @@ html[data-skin] .sky{ border-color:var(--line); }
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-23b（各站資料庫更新：MFM 宵禁備註）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-11-02d（CRK 跑道間距查證）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -765,9 +789,9 @@ html[data-skin] .sky{ border-color:var(--line); }
   <div class="srbody">
     <div id="srStatus"></div>
     <div class="srform">
-      <div class="f stn"><label for="srStn">事發場站（出發站）</label><input id="srStn" list="codes" maxlength="4" autocomplete="off" placeholder="NRT"></div>
-      <div class="f"><label for="srFlt">航班</label><input id="srFlt" list="srFlts" autocomplete="off" placeholder="JX800"></div>
-      <div class="f stn"><label for="srDst">旅客目的地</label><input id="srDst" list="codes" maxlength="4" autocomplete="off" placeholder="自動"></div>
+      <div class="f stn"><label for="srStn">事發場站（出發站）</label><input id="srStn" list="codes" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="NRT"></div>
+      <div class="f"><label for="srFlt">航班</label><input id="srFlt" list="srFlts" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="JX800"></div>
+      <div class="f stn"><label for="srDst">旅客目的地</label><input id="srDst" list="codes" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="自動"></div>
       <div class="f"><label for="srPax">受影響人數</label><input id="srPax" inputmode="numeric" autocomplete="off" placeholder="自動帶入"></div>
       <div class="f"><label for="srWin">替代航班範圍</label>
         <select id="srWin"><option value="12">12 小時內</option><option value="24" selected>24 小時內</option><option value="48">48 小時內</option></select></div>
@@ -3154,7 +3178,8 @@ function renderList(){
     const grid=document.createElement("div"); grid.className="codes";
     list.forEach(s=>{
       const b=document.createElement("button");
-      b.className="code"+(s.filled?"":" empty");
+      b.className="code"+(s.filled?"":" empty")+(s.items.curfew && s.items.curfew.status==="V" ? " has-cf" : "");
+      if(s.items.curfew && s.items.curfew.status==="V") b.title = "有宵禁" + (s.items.curfew.time ? "：" + s.items.curfew.time.replace(/\n/g," ") : "");
       b.setAttribute("aria-pressed", current && current.code===s.code);
       const bar = ITEMS.map(i=>{
         const c = read(i.key, s.items[i.key].status).k;
@@ -3523,12 +3548,13 @@ function stationField(label,i){
   return `<div class="f stn">
     <label>${label}</label>
     <input data-i="${i}" data-k="code" value="${esc(stops[i].code||"")}" list="codes"
-           placeholder="TPE" maxlength="4">
+           placeholder="TPE" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
     <div class="sub2"></div></div>`;
 }
 
-function renderLegs(focusKey){
-  const host = document.getElementById("legs");
+function renderLegs(focusKey, patch){
+  const real = document.getElementById("legs");
+  const host = patch ? document.createElement("div") : real;
   const {arr, dep} = chain();
   host.innerHTML = stops.map((S,i)=>{
     const first = i===0, last = i===stops.length-1;
@@ -3565,9 +3591,8 @@ function renderLegs(focusKey){
       : [curfewRow("抵達", code, arr[i]), curfewRow("再起飛", code, dep[i])]
     ).filter(Boolean).join("");
 
-    const via = first
-      ? `${code||"—"} 出發`
-      : `${(stops[i-1].code||"—").toUpperCase()} → ${code||"—"}`;
+    /* 卡片標題只寫這一站：第一站「XXX 出發」，之後各站有抵達也有再起飛，寫「XXX 抵達/出發」 */
+    const via = `${code||"—"} ${first ? "出發" : "抵達/出發"}`;
 
     return `<div class="leg">
       <div class="lhead"><span class="n">${i+1}</span><strong>${via}</strong>
@@ -3578,16 +3603,45 @@ function renderLegs(focusKey){
     </div>`;
   }).join("");
 
+  if(patch){
+    /* 只換掉計算結果與標題，使用者正在打字的欄位原封不動 */
+    const nl = host.querySelectorAll(".leg"), ol = real.querySelectorAll(".leg");
+    if(nl.length !== ol.length){ renderLegs(); return; }
+    nl.forEach((n, j)=>{
+      const o = ol[j];
+      ["lhead", "out"].forEach(c=>{ const a = o.querySelector("."+c), b = n.querySelector("."+c); if(a && b && a.innerHTML !== b.innerHTML) a.innerHTML = b.innerHTML; });
+      const oc = o.querySelector(".cfbox"), nc = n.querySelector(".cfbox");
+      if(oc && nc){ if(oc.innerHTML !== nc.innerHTML) oc.innerHTML = nc.innerHTML; } else if(oc) oc.remove(); else if(nc) o.appendChild(nc);
+      const of = o.querySelectorAll(".fields .f"), nf = n.querySelectorAll(".fields .f");
+      of.forEach((f, q)=>{
+        const g = nf[q]; if(!g) return;
+        const oi = f.querySelector("input"), ni = g.querySelector("input");
+        if(oi && ni && oi !== document.activeElement && oi.value !== ni.value) oi.value = ni.value;
+        const os = f.querySelector(".sub2"), ns = g.querySelector(".sub2");
+        if(os && ns && os.innerHTML !== ns.innerHTML) os.innerHTML = ns.innerHTML;
+      });
+    });
+    bindLegs(real);
+    return;
+  }
+  bindLegs(host);
+  if(focusKey){
+    const [i,k] = focusKey.split(":");
+    const el = document.querySelector(`input[data-i="${i}"][data-k="${k}"]`);
+    if(el && document.activeElement!==el) el.focus();
+  }
+}
+function bindLegs(host){
   host.querySelectorAll("input[data-k]").forEach(inp=>{
     if(!inp.readOnly){
-      inp.oninput = ()=>{
+      inp.oninput = ev=>{
+        if(ev && ev.isComposing) return;
         const i = +inp.dataset.i, k = inp.dataset.k;
         stops[i][k] = k==="code" ? inp.value.toUpperCase() : inp.value;
-        const pos = inp.selectionStart;
-        renderLegs(i+":"+k);
-        const again = document.querySelector(`input[data-i="${i}"][data-k="${k}"]`);
-        if(again){ again.focus(); try{ again.setSelectionRange(pos,pos); }catch(e){} }
+        renderLegs(null, true);
       };
+      inp.oncompositionend = ()=>{ if(inp.oninput) inp.oninput({}); };
+      if(inp.dataset.k === "code") inp.onblur = ()=>{ const u = inp.value.toUpperCase().trim(); if(inp.value !== u) inp.value = u; };   /* 打完字才轉大寫 */
     }
     inp.onkeydown = ev=>{
       if(ev.key!=="ArrowUp" && ev.key!=="ArrowDown") return;
@@ -3607,12 +3661,6 @@ function renderLegs(focusKey){
   host.querySelectorAll("[data-rm]").forEach(b=>{
     b.onclick = ()=>{ stops.splice(+b.dataset.rm,1); stops[0].delta=0; renderLegs(); };
   });
-
-  if(focusKey){
-    const [i,k] = focusKey.split(":");
-    const el = document.querySelector(`input[data-i="${i}"][data-k="${k}"]`);
-    if(el && document.activeElement!==el) el.focus();
-  }
 }
 document.getElementById("addLeg").onclick = ()=>{
   stops.push({code:"", tz:"0", aabi:"00:10", gt:"01:00", dep:"", delta:0, ft:"03:00"});
@@ -3644,10 +3692,10 @@ KHH:{n:"KAOHSIUNG",ll:[22.58,120.35],r:[[90,3150,0,0]],t:[[.1,-.4,.9,.28,.04]],w
 HKG:{n:"HONG KONG",ll:[22.31,113.92],r:[[70,3800,-1.35,0,"L"],[70,3800,0,0,"C"],[70,3800,1.5,0,"R"]],t:[[-.3,.75,1.2,.4,.05],[1,.75,.45,.3,.04]],w:[["S"],["I",.3],["C",190,6,4.5],["C",170,3.2,1.6]],m:[[200,5.5,1.8]],c:[[165,3,.8]]},
 MFM:{n:"MACAU",ll:[22.15,113.59],r:[[160,3360,0,0]],tx:[[-.51,1.4,-.72,1.33,-1.05,1.24,-1.5,1.15],[.12,-.34,-.35,-.02,-.9,.32,-1.15,.46]],t:[[-1,1.25,.6,.3,.04]],w:[["S"],["I",.2,1],["C",265,2.4,1.7],["C",300,3.4,1.5],["C",215,2.8,1.4]],c:[[230,2.8,1.1]]},
 NRT:{n:"NARITA",ll:[35.77,140.39],r:[[160,4000,1.25,0,"R"],[160,2500,-1.25,-.9,"L"]],t:[[-.9,0,.9,.35,.05],[.35,0,.8,.35,.05]],c:[[240,6,1.8]],m:[[80,5,1.6],[300,4.5,1.2]]},
-FUK:{n:"FUKUOKA",ll:[33.59,130.45],r:[[160,2800,0,0]],t:[[0,.5,1.1,.28,.04],[.4,-.5,.5,.25,.04]],c:[[300,3,2.6],[200,2.6,1.5],[25,3,1.5]],w:[["h",320,4.2]],m:[[110,6,2.5]]},
+FUK:{n:"FUKUOKA",ll:[33.59,130.45],r:[[160,2800,-.105,0,"L"],[160,2500,.105,.15,"R"]],t:[[0,.5,1.1,.28,.04],[.4,-.5,.5,.25,.04]],c:[[300,3,2.6],[200,2.6,1.5],[25,3,1.5]],w:[["h",320,4.2]],m:[[110,6,2.5]]},
 CTS:{n:"NEW CHITOSE",ll:[42.78,141.69],r:[[10,3000,-.75,0,"L"],[10,3000,.75,0,"R"]],t:[[.2,1.4,.8,.3,.05]],c:[[300,5.5,1.8]],m:[[260,8,3]]},
 OKA:{n:"NAHA",ll:[26.2,127.65],r:[[180,3000,-.65,0,"L"],[180,2700,.65,.1,"R"]],t:[[-.2,-1.25,.8,.3,.04]],w:[["h",270,.15],["h",330,2.8],["I",.3,1]],c:[[45,3.5,2]]},
-SDJ:{n:"SENDAI",ll:[38.14,140.92],r:[[120,3000,0,0],[90,1200,-.55,-.25]],t:[[-.5,-.7,.7,.25,.04]],w:[["h",90,1.7]],c:[[270,4,1.5]],m:[[275,9,3]]},
+SDJ:{n:"SENDAI",ll:[38.14,140.92],r:[[90,3000,0,0],[120,1200,-.55,-.25]],t:[[-.5,-.7,.7,.25,.04]],w:[["h",90,1.7]],c:[[270,4,1.5]],m:[[275,9,3]]},
 KIX:{n:"KANSAI",ll:[34.43,135.23],r:[[60,3500,1.15,0,"R"],[60,4000,-1.15,.4,"L"]],t:[[-.2,1.7,1.5,.35,.05]],w:[["S"],["I",.35],["H",120,4.5]],m:[[130,13,4]],c:[[110,5.2,1.2]]},
 KMJ:{n:"KUMAMOTO",ll:[32.84,130.86],r:[[70,3000,0,0]],t:[[0,-.45,.8,.28,.04]],c:[[250,7,2]],m:[[90,6,3],[300,6.5,2]]},
 NGO:{n:"CHUBU CENTRAIR",ll:[34.86,136.81],r:[[180,3500,0,0]],t:[[0,-.65,.9,.3,.05]],w:[["S"],["I",.35],["H",90,1.9]],c:[[95,2.8,1.5]]},
@@ -3655,26 +3703,26 @@ HKD:{n:"HAKODATE",ll:[41.77,140.82],r:[[120,3000,0,0]],t:[[-.3,-.45,.7,.25,.04]]
 TAK:{n:"TAKAMATSU",ll:[34.21,134.02],r:[[80,2500,0,0]],t:[[0,-.4,.6,.25,.04]],c:[[0,8,2.5]],m:[[150,5,3],[250,4.5,1.8]],w:[["h",0,11]]},
 UKB:{n:"KOBE",ll:[34.63,135.22],r:[[90,2500,0,0]],t:[[-.3,-.4,.5,.22,.04]],w:[["S"],["I",.3],["H",0,2.6]],c:[[345,4.5,2.5]],m:[[340,9,4]]},
 SHI:{n:"SHIMOJISHIMA",ll:[24.83,125.14],r:[[170,3000,0,0]],t:[[.2,.4,.3,.2,.03]],w:[["S"],["I",.45],["C",75,3,2.2]]},
-PUS:{n:"GIMHAE",ll:[35.18,128.94],r:[[180,3200,-.2,0,"L"],[180,2745,.2,.1,"R"]],t:[[-.2,-.9,.7,.28,.04]],rv:[[330,3.2,300,1.7,245,1.6,205,2.6,190,4.5]],m:[[85,5.5,3],[300,7,3]],c:[[80,8,2.5]]},
+PUS:{n:"GIMHAE",ll:[35.18,128.94],r:[[180,2743,-.2,.1,"L"],[180,3200,.2,0,"R"]],t:[[-.2,-.9,.7,.28,.04]],rv:[[330,3.2,300,1.7,245,1.6,205,2.6,190,4.5]],m:[[85,5.5,3],[300,7,3]],c:[[80,8,2.5]]},
 MNL:{n:"NINOY AQUINO",ll:[14.51,121.02],r:[[60,3737,0,0],[130,2258,0,.9]],t:[[-1.1,.55,.6,.3,.04],[.9,-.6,.9,.3,.05]],w:[["h",285,3.6]],c:[[0,5,3],[190,4,2],[90,4,2]]},
-CRK:{n:"CLARK",ll:[15.19,120.56],r:[[20,3200,0,0]],t:[[-.3,-.9,.7,.28,.04]],m:[[265,8,4],[95,11,2.5]],c:[[150,4,2]]},
-CEB:{n:"MACTAN-CEBU",ll:[10.31,123.98],r:[[40,3300,0,0]],t:[[-.3,-.45,.8,.3,.04]],w:[["S"],["C",110,.9,2.9],["H",295,2.9]],c:[[140,2.8,1],[290,4.8,2]]},
+CRK:{n:"CLARK",ll:[15.19,120.56],r:[[20,3200,.222,.315,"R"],[20,3200,-.222,-.315,"L"]],t:[[-.3,-.9,.7,.28,.04]],m:[[265,8,4],[95,11,2.5]],c:[[150,4,2]]},
+CEB:{n:"MACTAN-CEBU",ll:[10.31,123.98],r:[[40,3310,.25,0,"R"],[40,2560,-.25,.2,"L"]],t:[[-.3,-.45,.8,.3,.04]],w:[["S"],["C",110,.9,2.9],["H",295,2.9]],c:[[140,2.8,1],[290,4.8,2]]},
 HAN:{n:"NOI BAI",ll:[21.22,105.81],r:[[110,3200,-.25,0,"L"],[110,3800,.25,.2,"R"]],t:[[0,1.05,1,.3,.05]],c:[[170,9,3]],m:[[20,7,3]],rv:[[260,9,215,7.5,175,7.8,140,9.5]]},
-DAD:{n:"DA NANG",ll:[16.05,108.2],r:[[170,3048,-.18,0,"L"],[170,3500,.18,0,"R"]],t:[[-.2,.75,.7,.28,.04]],w:[["h",80,3.2]],c:[[50,2.6,2.2],[185,3,1.5]],m:[[35,9,2],[265,8,4]]},
+DAD:{n:"DA NANG",ll:[16.05,108.2],r:[[170,3500,-.18,0,"L"],[170,3048,.18,0,"R"]],t:[[-.2,.75,.7,.28,.04]],w:[["h",80,3.2]],c:[[50,2.6,2.2],[185,3,1.5]],m:[[35,9,2],[265,8,4]]},
 SGN:{n:"TAN SON NHAT",ll:[10.82,106.65],r:[[70,3048,-.19,0,"L"],[70,3800,.19,.1,"R"]],t:[[0,.9,.9,.3,.05]],c:[[180,2.6,2.2],[90,3,2],[255,3,2],[0,3,1.6]],rv:[[20,6,75,5.5,125,6,160,7.5]]},
-PQC:{n:"PHU QUOC",ll:[10.17,103.99],r:[[100,3000,0,0]],t:[[0,-.4,.6,.25,.04]],w:[["h",265,1.9]],m:[[15,7,3]],c:[[330,5.5,1]]},
-BKK:{n:"SUVARNABHUMI",ll:[13.69,100.75],r:[[10,3700,-1.1,0,"L"],[10,4000,1.1,0,"R"]],t:[[0,0,1.1,.55,.06]],c:[[300,9,3]]},
-CNX:{n:"CHIANG MAI",ll:[18.77,98.96],r:[[180,3100,0,0]],t:[[.1,-.45,.6,.25,.04]],c:[[20,2.6,2.4]],m:[[285,7,3.5]],rv:[[5,4,85,2.2,175,4.2]]},
-KUL:{n:"KLIA",ll:[2.75,101.71],r:[[140,4000,-1,0,"L"],[140,4056,1,0,"R"],[150,4000,3.2,.4]],t:[[0,0,1.1,.5,.06],[.9,0,.5,.4,.05]],c:[[180,8,1.5]],m:[[60,9,3]]},
+PQC:{n:"PHU QUOC",ll:[10.17,103.99],r:[[100,3300,-.3,.1,"L"],[100,3000,.3,0,"R"]],t:[[0,-.4,.6,.25,.04]],w:[["h",265,1.9]],m:[[15,7,3]],c:[[330,5.5,1]]},
+BKK:{n:"SUVARNABHUMI",ll:[13.69,100.75],r:[[10,4000,-2.35,.2,"2L"],[10,3700,-1.1,0,"2R"],[10,4000,1.1,0,"1"]],t:[[0,0,1.1,.55,.06]],c:[[300,9,3]]},
+CNX:{n:"CHIANG MAI",ll:[18.77,98.96],r:[[180,3400,0,0]],t:[[.1,-.45,.6,.25,.04]],c:[[20,2.6,2.4]],m:[[285,7,3.5]],rv:[[5,4,85,2.2,175,4.2]]},
+KUL:{n:"KLIA",ll:[2.75,101.71],r:[[140,4124,-1,0,"L"],[140,4050,1,0,"R"],[150,3960,3.2,.4]],t:[[0,0,1.1,.5,.06],[.9,0,.5,.4,.05]],c:[[180,8,1.5]],m:[[60,9,3]]},
 SIN:{n:"CHANGI",ll:[1.36,103.99],r:[[20,4000,-.8,0,"L"],[20,4000,.8,0,"C"]],t:[[-.7,0,.8,.3,.06],[.3,0,.8,.3,.06]],w:[["h",105,1.9],["h",15,3.4]],c:[[245,5,2.5],[305,4,1.5]]},
-CGK:{n:"SOEKARNO-HATTA",ll:[-6.13,106.66],r:[[70,3600,-1.2,0,"L"],[70,3660,1.2,0,"R"]],t:[[-.5,0,.9,.4,.05],[.6,0,.9,.4,.05]],w:[["h",0,6]],c:[[115,9,3.5],[165,4,2]]},
+CGK:{n:"SOEKARNO-HATTA",ll:[-6.13,106.66],r:[[70,3600,-1.2,0,"L"],[70,3660,1.2,0,"R"],[60,3000,-2.4,.8]],t:[[-.5,0,.9,.4,.05],[.6,0,.9,.4,.05]],w:[["h",0,6]],c:[[115,9,3.5],[165,4,2]]},
 DPS:{n:"NGURAH RAI",ll:[-8.75,115.17],r:[[90,3000,0,0]],t:[[.2,-.4,.9,.28,.04]],w:[["c",270,2.6,1.4],["c",95,2.9,1.2],["c",225,2.8,1.4],["I",.12,1]],c:[[345,2.6,1.8]],m:[[180,4.5,2.2]]},
-LAX:{n:"LOS ANGELES",ll:[33.94,-118.41],r:[[70,2721,-1.12,.35,"6L"],[70,3135,-.9,0,"6R"],[70,3382,.85,0,"7L"],[70,3350,1.08,.15,"7R"]],t:[[-.1,0,1.5,.8,.05]],w:[["h",268,2.4]],c:[[60,5,3.5],[130,5,3],[0,4,2]]},
-SFO:{n:"SAN FRANCISCO",ll:[37.62,-122.38],r:[[100,3618,-.12,0,"L"],[100,3231,.12,-.1,"R"],[10,2637,-.6,-.2,"R"],[10,2286,-.83,-.1,"L"]],t:[[-2.05,.25,.45,1.4,.05]],w:[["h",80,.9],["I",.15,1]],c:[[265,3,2.4],[200,4,2]],m:[[330,7,2.5]]},
-ONT:{n:"ONTARIO",ll:[34.06,-117.6],r:[[80,3718,-.12,0,"L"],[80,3048,.12,.2,"R"]],t:[[0,.6,.9,.28,.04]],m:[[0,9,5]],c:[[180,4,3],[270,5,3],[90,5,2.5]]},
+LAX:{n:"LOS ANGELES",ll:[33.94,-118.41],r:[[70,2721,-1.12,.35,"6L"],[70,3310,-.9,0,"6R"],[70,3930,.85,0,"7L"],[70,3382,1.08,.15,"7R"]],t:[[-.1,0,1.5,.8,.05]],w:[["h",268,2.4]],c:[[60,5,3.5],[130,5,3],[0,4,2]]},
+SFO:{n:"SAN FRANCISCO",ll:[37.62,-122.38],r:[[100,3618,-.12,0,"L"],[100,3469,.12,-.1,"R"],[10,2637,-.6,-.2,"R"],[10,2332,-.83,-.1,"L"]],t:[[-2.05,.25,.45,1.4,.05]],w:[["h",80,.9],["I",.15,1]],c:[[265,3,2.4],[200,4,2]],m:[[330,7,2.5]]},
+ONT:{n:"ONTARIO",ll:[34.06,-117.6],r:[[80,3718,-.12,0,"L"],[80,3109,.12,.2,"R"]],t:[[0,.6,.9,.28,.04]],m:[[0,9,5]],c:[[180,4,3],[270,5,3],[90,5,2.5]]},
 SEA:{n:"SEATTLE-TACOMA",ll:[47.45,-122.31],r:[[160,3627,-.25,0,"L"],[160,2873,0,.1,"C"],[160,2591,.3,.2,"R"]],t:[[-.1,-1,1,.4,.05]],w:[["h",270,5]],c:[[0,8,3],[180,4,2]],m:[[110,8,3]]},
-PHX:{n:"PHOENIX SKY HARBOR",ll:[33.43,-112.01],r:[[80,3502,-1,0,"8"],[70,3353,.55,.1,"7L"],[70,2377,.8,.2,"7R"]],t:[[0,-.2,1.4,.35,.05]],m:[[190,8,4],[20,7,1.2]],c:[[330,4,3],[80,4.5,2.5]],rv:[[250,3.5,190,2,120,2,75,4]]},
-DFW:{n:"DALLAS/FORT WORTH",ll:[32.9,-97.04],r:[[170,4085,-1.62,0,"C"],[170,4085,-.92,0,"R"],[170,4085,-2.28,.3,"L"],[180,4085,.9,0,"L"],[180,4085,1.6,0,"R"],[130,2835,2.44,-1.35,"R"],[130,2743,-1.2,3.3,"L"]],t:[[-1.2,0,.45,.45,.05],[-.6,0,.45,.45,.05],[0,0,.45,.45,.05],[.6,0,.45,.45,.05],[1.2,0,.45,.45,.05]],w:[["c",0,7,1.6]],c:[[300,8,3],[100,9,3]]},
+PHX:{n:"PHOENIX SKY HARBOR",ll:[33.43,-112.01],r:[[80,3502,-1,0,"8"],[70,3139,.55,.1,"7L"],[70,2377,.8,.2,"7R"]],t:[[0,-.2,1.4,.35,.05]],m:[[190,8,4],[20,7,1.2]],c:[[330,4,3],[80,4.5,2.5]],rv:[[250,3.5,190,2,120,2,75,4]]},
+DFW:{n:"DALLAS/FORT WORTH",ll:[32.9,-97.04],r:[[170,4085,-1.62,0,"C"],[170,4085,-.92,0,"R"],[170,2591,-2.28,.3,"L"],[180,4085,.9,0,"L"],[180,4085,1.6,0,"R"],[130,2835,2.44,-1.35,"R"],[130,2743,-1.2,3.3,"L"]],t:[[-1.2,0,.45,.45,.05],[-.6,0,.45,.45,.05],[0,0,.45,.45,.05],[.6,0,.45,.45,.05],[1.2,0,.45,.45,.05]],w:[["c",0,7,1.6]],c:[[300,8,3],[100,9,3]]},
 IAD:{n:"WASHINGTON DULLES",ll:[38.95,-77.46],r:[[10,3505,-.8,0,"C"],[10,3505,.8,0,"R"],[10,2865,-2.2,.3,"L"],[120,3200,-1.6,-2.43]],t:[[-.9,0,1,.3,.05],[0,0,.9,.25,.05],[.5,0,.9,.25,.05]],c:[[320,6,2.5],[20,6,2]]},
 BOS:{n:"BOSTON LOGAN",ll:[42.36,-71.01],r:[[40,3050,0,0,"R"],[40,2396,-.5,.45,"L"],[150,3073,.1,.2,"R"],[90,2134,-.3,.7],[140,1524,.6,-.9]],t:[[.2,-1.1,1.2,.4,.05]],w:[["S"],["I",.25],["C",255,3.2,1.6],["C",330,2.4,1.5]],c:[[255,3.2,1.2]]},
 PRG:{n:"PRAGUE",ll:[50.1,14.26],r:[[60,3715,0,0],[120,3250,-.9,-.2]],t:[[1,-1.1,.9,.3,.05]],c:[[100,7,3]],rv:[[20,9,80,7,140,9]],m:[[200,6,2]]},
@@ -4569,7 +4617,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   function chip(attr, val, cur, label, n){
     return '<button type="button" class="chip" ' + attr + '="' + esc(val) + '" aria-pressed="' + (cur === val) + '">' + label + (n != null ? '<span class="n">' + n + "</span>" : "") + "</button>";
   }
-  function regLabel(g){ return g === "北美" ? "🇺🇸 北美" : g; }
+  function regLabel(g){ return g; }
   function dayLabel(k){
     var p = k.split("-"), d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2]));
     var t = dkey(Date.now()), t1 = dkey(Date.now() + 86400000), t2 = dkey(Date.now() + 2*86400000);
@@ -5652,9 +5700,10 @@ const SR = (()=>{
   $("srFab").onclick = ()=>open();
   $("srClose").onclick = close;
   dlg.addEventListener("click", e=>{ if(e.target===dlg) close(); });
-  $("srStn").addEventListener("input", e=>{ const el=e.target, p=el.selectionStart; el.value=el.value.toUpperCase(); stnTouched=!!el.value.trim(); try{el.setSelectionRange(p,p);}catch(_){} render(); });
+  $("srStn").addEventListener("input", e=>{ if(e.isComposing) return; stnTouched=!!e.target.value.trim(); render(); });
   $("srFlt").addEventListener("input", ()=>{ fltChanged=true; render(); });
-  $("srDst").addEventListener("input", e=>{ e.target.value=e.target.value.toUpperCase(); dstTouched=!!e.target.value.trim(); render(); });
+  $("srDst").addEventListener("input", e=>{ if(e.isComposing) return; dstTouched=!!e.target.value.trim(); render(); });
+  ["srStn","srDst","srFlt"].forEach(id=>$(id).addEventListener("blur", e=>{ const u=e.target.value.toUpperCase().trim(); if(e.target.value!==u) e.target.value=u; }));
   $("srWin").addEventListener("change", render);
   $("srPax").addEventListener("input", e=>{ paxTouched=!!e.target.value.trim(); render(); });
   function flash(id){ const el=$(id); el.classList.remove("srflash"); void el.offsetWidth; el.classList.add("srflash"); }
@@ -5895,6 +5944,22 @@ const I18N = (()=>{
     "斯德哥爾摩":"Stockholm","赫爾辛基":"Helsinki","華沙":"Warsaw","布拉格":"Prague","約翰尼斯堡":"Johannesburg","開羅":"Cairo",
     "阿迪斯阿貝巴":"Addis Ababa","奈洛比":"Nairobi","特拉維夫":"Tel Aviv",
   };
+  /* 新功能（轉機人數、搜尋、篩選）的整句譯法，放在逐字翻譯之前，避免「已扣Oversold」這類半中半英 */
+  Object.assign(LONG, {
+    "總空位（已扣超賣）":"Total avail. (net of oversold)","已扣超賣":"net of oversold","班已填":" flts filled","已填":"filled",
+    "（超過 5 小時未更新）":"(over 5 h without update)","超過 5 小時未更新":"over 5 h without update",
+    "尚未填寫（可在每班下方直接輸入，或上傳 Excel）":"Not filled yet (enter under each flight or upload Excel)","尚未填寫":"Not filled yet",
+    "目前沒有人填寫":"No one has filled in yet","連線中繼中…":"Connecting to relay…","／訂位 ":"/ booked "," 座":" seats",
+    "先選區域":"Pick a region first","先選地區":"Pick a region first","僅存本機（中繼尚未啟用轉機同步）":"Local only (relay sync not enabled)",
+    "已與大家同步":"Synced with everyone","同步中…":"Syncing…","🔒 唯讀":"🔒 Read-only","編輯碼 ✓":"Edit code ✓","🚪 登出本機":"🚪 Sign out this device",
+    "查看碼不正確，讀不到大家的轉機人數":"Wrong view code; cannot read shared transfer pax","編輯碼不正確，變更沒有送出":"Wrong edit code; changes not sent",
+    "連不到中繼，顯示上次資料":"Relay unreachable; showing last data","同步失敗，15 秒後重送":"Sync failed; retrying in 15 s",
+    "錯誤次數太多，已暫時封鎖約 ":"Too many wrong attempts; blocked for about ","搜尋結果":"Search results",
+    "已略過上方的方向、日期與地區篩選":"direction, date and region filters are skipped","仍套用「只看經濟艙還有空位」":"still applying \"Y seats only\"",
+    "沒有找到航班。可以輸入班號（JX800 或 800）、場站代碼（NRT）或機號（B58501）":"No flights found. Try a flight no. (JX800 or 800), station code (NRT) or registration (B58501)",
+    "抵達/出發":"Arrival/Depart","當地出發":"local dep.","抵台日期":"Arr. date (TW)","依抵台日期・外站出發時間為當地時間":"By Taiwan arrival date · departure times local",
+    "表定抵台":"Sched. arr. TW","抵台":"Arr TW"
+  });
   const PUNCT = [["（"," ("],["）",")"],["｜"," | "],["、",", "],["，",", "],["。",". "],["：",": "],["；","; "],["・"," · "],
                  ["／","/"],["「","\""],["」","\""],["　"," "],["～","~"],["＋","+"],["？","?"],["！","!"]];
 
@@ -5999,6 +6064,48 @@ const I18N = (()=>{
 })();
 I18N.init();
 
+</script>
+<script>
+/* ---------- 空位查詢篩選：把原本的選項按鈕轉成下拉選單；選單改變時按下對應的原按鈕，篩選邏輯完全沿用 ---------- */
+(function(){
+  var IDS = ["sxDates","sxA","sxB","sxC"];
+  function txt(b){
+    var n = b.querySelector(".n"), t = b.cloneNode(true), nn = t.querySelector(".n"); if(nn) nn.remove();
+    var label = t.textContent.replace(/\s+/g, " ").trim();
+    if(/今天|明天|後天/.test(label)) label = label.replace(/（.）\s*/, " ");   /* 手機上放得下：10/25 明天 */
+    return label + (n ? "・" + n.textContent.trim() : "");
+  }
+  function build(id){
+    var box = document.getElementById(id); if(!box) return;
+    var row = box.closest(".sx-f"); if(!row) return;
+    var sel = row.querySelector("select.sx-sel");
+    if(!sel){
+      sel = document.createElement("select"); sel.className = "sx-sel";
+      var lab = row.querySelector(":scope > span"); if(lab){ if(!lab.id) lab.id = id + "Lab"; sel.setAttribute("aria-labelledby", lab.id); }
+      sel.addEventListener("change", function(){
+        var b = box.querySelectorAll("button")[+sel.value]; if(b) b.click();
+      });
+      row.insertBefore(sel, box);
+    }
+    var btns = box.querySelectorAll("button"), html = "", cur = -1;
+    btns.forEach(function(b, i){
+      if(b.getAttribute("aria-pressed") === "true") cur = i;
+      html += '<option value="' + i + '">' + txt(b).replace(/&/g,"&amp;").replace(/</g,"&lt;") + "</option>";
+    });
+    if(!btns.length){
+      var hint = box.textContent.trim();
+      html = '<option value="">' + (hint && hint.length < 14 ? hint : /地區/.test(hint) ? "先選地區" : "先選區域").replace(/</g,"&lt;") + "</option>";
+    }
+    if(sel.innerHTML !== html) sel.innerHTML = html;
+    sel.disabled = !btns.length;
+    sel.value = cur >= 0 ? String(cur) : (btns.length ? "0" : "");
+  }
+  IDS.forEach(function(id){
+    var box = document.getElementById(id); if(!box) return;
+    build(id);
+    new MutationObserver(function(){ build(id); }).observe(box, { childList:true, subtree:true, attributes:true, attributeFilter:["aria-pressed"] });
+  });
+})();
 </script>
 </body>
 </html>
