@@ -39,7 +39,11 @@ header.top{padding:26px 0 14px;display:flex;align-items:flex-end;gap:18px;flex-w
 h1{font-size:22px;line-height:1.25;margin:0;font-weight:700;letter-spacing:.01em}
 .sub{color:var(--muted);font-size:12.5px;margin-top:2px}
 .stat{display:flex;gap:22px}
-.langsw{margin-left:auto;align-self:flex-start;display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--panel)}
+.topr{order:-1;flex:0 0 100%;display:flex;flex-direction:row-reverse;align-items:center;gap:10px;margin:-14px 0 -4px}
+.ver{display:inline-flex;align-items:baseline;gap:5px;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--muted);font-variant-numeric:tabular-nums;padding-right:4px;white-space:nowrap}
+.ver span{font-size:10px;font-weight:600;letter-spacing:.12em;opacity:.75}
+header.top .stat{margin-left:auto}
+.langsw{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--panel)}
 .langsw button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:700;padding:6px 13px;cursor:pointer;min-height:32px}
 .langsw button[aria-pressed="true"]{background:var(--gold);color:#15202b}
 .stat div{text-align:right}
@@ -289,9 +293,10 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
   .slot .lb{min-height:auto}
   .bigcode{font-size:36px}
   .stat{margin-left:0;width:100%;justify-content:flex-start;gap:26px}
-  .langsw{position:absolute;top:18px;right:16px}
+  .topr{margin:-16px 0 -2px}
+  .ver{font-size:10px;letter-spacing:.02em;padding-right:2px}
+  .ver span{display:none}
   header.top{position:relative}
-  header.top .mark{padding-right:112px}
   .stat div{text-align:left}
 }
 @media print{
@@ -306,6 +311,16 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 .sky{position:relative;border:1px solid var(--line);border-top:0;border-bottom:0;background:#040a12;overflow:hidden;line-height:0}
 .sky canvas{display:block;width:100%;height:260px}
 @media print{.sky{border-color:#bbb !important}}
+
+/* ---------- 左右滑動切換頁籤 ---------- */
+section[role=tabpanel]{touch-action:pan-y pinch-zoom}
+section[role=tabpanel].sw-drag{transition:none;will-change:transform}
+section[role=tabpanel].sw-back{transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .28s}
+@keyframes swInL{from{transform:translate3d(42px,0,0);opacity:0}to{transform:none;opacity:1}}
+@keyframes swInR{from{transform:translate3d(-42px,0,0);opacity:0}to{transform:none;opacity:1}}
+section[role=tabpanel].sw-inL{animation:swInL .3s cubic-bezier(.2,.8,.2,1)}
+section[role=tabpanel].sw-inR{animation:swInR .3s cubic-bezier(.2,.8,.2,1)}
+@media (prefers-reduced-motion:reduce){section[role=tabpanel].sw-inL,section[role=tabpanel].sw-inR{animation:none}}
 </style>
 <style>
 /* ---------- 空位查詢（資料來自 AMP值班台 的中繼） ---------- */
@@ -682,8 +697,11 @@ html[data-skin] .sky{ border-color:var(--line); }
       <div class="sub">轉降、滯機加油、下客入境的第一線判斷依據</div>
     </div>
   </div>
-  <div class="langsw" role="group" aria-label="Language" data-noi18n>
-    <button type="button" data-lang="zh">中文</button><button type="button" data-lang="en">EN</button>
+  <div class="topr">
+    <div class="langsw" role="group" aria-label="Language" data-noi18n>
+      <button type="button" data-lang="zh">中文</button><button type="button" data-lang="en">EN</button>
+    </div>
+    <div class="ver" data-noi18n title="2026.11.07：左右滑動切換頁籤、STD 依出發站當地時間顯示（UTC 自動校正）"><span>版次</span>v2026.11.07</div>
   </div>
   <div class="stat">
     <div><b id="statStations">0</b><span>收錄場站</span></div>
@@ -4685,6 +4703,27 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     if(tx && tx.est) return { ms: tx.est, kind:"est", live:true };
     return { ms: r.dep || r.std, kind: r.bf === "A" ? "act" : r.bf === "E" ? "est" : (r.dep && r.std && r.dep !== r.std ? "est" : "sch"), live:false };
   }
+  /* 清單時間基準自動校正：值班台未標記 UTC 時，用 AIRS 表定／機場實際預估時間比對。
+     至少 3 班可比對、且中位差約 +8 小時，才視為 UTC；校正後各站依當地時區顯示。 */
+  function seatOffsets(rows){
+    var out = [];
+    rows.forEach(function(r){
+      if(!r.std || !isBase(r.from)) return;
+      var best = null;
+      (AIRS["D|" + fnN(r.flt)] || []).forEach(function(a){ var d = a.s - r.std; if(a.s && Math.abs(d) < 12*3600000 && (best == null || Math.abs(d) < Math.abs(best))) best = d; });
+      if(best == null){ var t = tdxDep(r), v = t && (t.act || t.est); if(v) best = v - r.std; }
+      if(best != null) out.push(best);
+    });
+    return out.sort(function(a, b){ return a - b; });
+  }
+  function parseSeat(text, flag){
+    var p = parse(text, flag);
+    S.tzFix = false;
+    if(flag) return { p:p, utc:true };
+    var o = seatOffsets(p.rows), m = o.length >= 3 ? o[Math.floor(o.length/2)] : 0;
+    if(m >= 6.5*3600000 && m <= 9.5*3600000){ S.tzFix = true; return { p:parse(text, true), utc:true }; }
+    return { p:p, utc:false };
+  }
   /* 各航點時區：外站出發時間以當地時間顯示 */
   var APT_TZ = {};
   function tzPut(tz, list){ list.split(" ").forEach(function(a){ APT_TZ[a] = tz; }); }
@@ -5247,7 +5286,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     var stale = S.t && Date.now() - S.t > 5*3600000;
     el.innerHTML = '<span>📡 空位清單來自 <b>' + SRC_NAME + "</b>" +
       (S.t ? "・系統清單 " + dayHm(S.t) + " 更新" + (stale ? '<span class="err">（超過 5 小時未更新）</span>' : "・預計下次約 " + dayHm(S.t + 3*3600000)) : "") +
-      (!R.cached && R.t ? airsBadge() : "") + (R.cached ? '・<span class="err">連線失敗，顯示上次快取</span>' : "") + (R.busy ? "・讀取中…" : "") + (R.err ? '・<span class="err">' + esc(R.err) + "</span>" : "") + "</span>" +
+      (S.tzFix ? "・清單時間已自動由 UTC 校正為各站當地時間" : "") + (!R.cached && R.t ? airsBadge() : "") + (R.cached ? '・<span class="err">連線失敗，顯示上次快取</span>' : "") + (R.busy ? "・讀取中…" : "") + (R.err ? '・<span class="err">' + esc(R.err) + "</span>" : "") + "</span>" +
       '<button class="sx-btn ghost" id="sxReload" type="button">重新讀取</button>' + (CRED.any() ? '<button class="sx-btn ghost" id="sxLogout" type="button" title="清除這台裝置上的查看碼、編輯碼與快取資料">🚪 登出本機</button>' : "") +
       '<div data-dstat style="flex-basis:100%">' + statusHtml() + '</div>' +
       (R.warn && !R.cached ? '<div class="sx-warn"><b>⚠ 值班台回報（' + clockOf(R.warn.t) + '）</b><ul data-noi18n>' + R.warn.msgs.map(function(m){ return "<li>" + esc(m) + "</li>"; }).join("") + "</ul></div>" : "");
@@ -5273,9 +5312,9 @@ renderList(); renderDetail(); window.scrollTo({top:0});
         tdxIndex(j); airsIndex(j);
         R.warn = j.warn && j.warn.msgs && j.warn.msgs.length && Date.now() - (j.warn.t || 0) < 6*3600000 ? j.warn : null;   // 值班台上傳的警告
         if(j.seat && j.seat.text){
-          var p = parse(j.seat.text, !!j.seat.utc);
+          var q = parseSeat(j.seat.text, !!j.seat.utc), p = q.p;
           S.rows = p.rows; S.legs = p.legs; S.t = j.seat.t || R.t; R.cached = false;
-          saveCache(j.seat.text, !!j.seat.utc, S.t, p.legs);
+          saveCache(j.seat.text, q.utc, S.t, p.legs);
           if(!p.rows.length) R.err = "清單內容看不懂";
         } else {
           S.rows = []; S.legs = [];
@@ -6105,6 +6144,77 @@ I18N.init();
     build(id);
     new MutationObserver(function(){ build(id); }).observe(box, { childList:true, subtree:true, attributes:true, attributeFilter:["aria-pressed"] });
   });
+})();
+</script>
+<script>
+/* 左右滑動切換頁籤：向左滑到下一頁、向右滑回上一頁；
+   在可橫向捲動的表格、輸入框、動畫或彈窗內不觸發 */
+(function(){
+  var tabs = [].slice.call(document.querySelectorAll('nav.tabs button[role=tab]'));
+  var nav = document.querySelector('nav.tabs');
+  if(!tabs.length) return;
+  function idx(){ for(var i=0;i<tabs.length;i++) if(tabs[i].getAttribute("aria-selected")==="true") return i; return 0; }
+  function panel(){ return document.getElementById(tabs[idx()].dataset.panel); }
+  function centerTab(b, smooth){
+    if(!nav || !b) return;
+    var x = b.offsetLeft - (nav.clientWidth - b.offsetWidth)/2;
+    nav.scrollTo({ left:Math.max(0, x), behavior: smooth ? "smooth" : "auto" });
+  }
+  tabs.forEach(function(b){ b.addEventListener("click", function(){ centerTab(b, true); }); });
+  function blocked(el, dx){
+    for(var n = el; n && n !== document.body; n = n.parentElement){
+      if(n.matches && n.matches('input,textarea,select,canvas,[contenteditable],dialog,nav.tabs,.no-swipe')) return true;
+      if(n.scrollWidth > n.clientWidth + 2){
+        var ox = getComputedStyle(n).overflowX;
+        if(ox === "auto" || ox === "scroll"){
+          if(dx < 0 && n.scrollLeft + n.clientWidth < n.scrollWidth - 1) return true;
+          if(dx > 0 && n.scrollLeft > 1) return true;
+        }
+      }
+    }
+    return false;
+  }
+  var st = null;
+  document.addEventListener("touchstart", function(e){
+    if(e.touches.length !== 1 || document.querySelector("dialog[open]")){ st = null; return; }
+    var t = e.touches[0], p = panel();
+    st = p && p.contains(e.target) ? { x:t.clientX, y:t.clientY, el:e.target, p:p, lock:0, t:Date.now() } : null;
+  }, { passive:true });
+  document.addEventListener("touchmove", function(e){
+    if(!st) return;
+    var t = e.touches[0], dx = t.clientX - st.x, dy = t.clientY - st.y;
+    if(!st.lock){
+      if(Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      if(Math.abs(dx) > Math.abs(dy) * 1.4 && !blocked(st.el, dx)){ st.lock = 1; st.p.classList.add("sw-drag"); }
+      else { st = null; return; }
+    }
+    var i = idx(), edge = (dx > 0 && i === 0) || (dx < 0 && i === tabs.length - 1);
+    var v = edge ? dx * .18 : dx * .45;
+    st.p.style.transform = "translate3d(" + v + "px,0,0)";
+    st.p.style.opacity = String(1 - Math.min(Math.abs(v)/600, .25));
+    st.dx = dx;
+  }, { passive:true });
+  function end(){
+    if(!st || !st.lock){ st = null; return; }
+    var p = st.p, dx = st.dx || 0, fast = Math.abs(dx) / Math.max(Date.now() - st.t, 1) > .45;
+    var i = idx(), go = (Math.abs(dx) > Math.min(90, innerWidth * .22) || (fast && Math.abs(dx) > 35)) ? (dx < 0 ? 1 : -1) : 0;
+    var j = i + go; st = null;
+    p.classList.remove("sw-drag");
+    if(!go || j < 0 || j >= tabs.length){
+      p.classList.add("sw-back"); p.style.transform = ""; p.style.opacity = "";
+      setTimeout(function(){ p.classList.remove("sw-back"); }, 300);
+      return;
+    }
+    p.style.transform = ""; p.style.opacity = "";
+    tabs[j].click();
+    var np = document.getElementById(tabs[j].dataset.panel), c = go > 0 ? "sw-inL" : "sw-inR";
+    if(np){ np.classList.remove("sw-inL","sw-inR"); void np.offsetWidth; np.classList.add(c);
+      np.addEventListener("animationend", function f(){ np.classList.remove(c); np.removeEventListener("animationend", f); }); }
+    if(navigator.vibrate) try{ navigator.vibrate(8); }catch(_){}
+  }
+  document.addEventListener("touchend", end, { passive:true });
+  document.addEventListener("touchcancel", end, { passive:true });
+  centerTab(tabs[idx()], false);
 })();
 </script>
 </body>
