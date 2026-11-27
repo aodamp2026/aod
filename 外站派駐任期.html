@@ -38,10 +38,14 @@ h1{font-size:clamp(22px,4vw,30px);margin:2px 0 0;font-weight:700;letter-spacing:
 .stat b{display:block;font-family:var(--f-display);font-size:34px;line-height:1;font-weight:600;font-variant-numeric:tabular-nums}
 .stat span{font-size:12px;color:var(--ink-2)}
 .stat.warn b{color:var(--warn)} .stat.crit b{color:var(--crit)} .stat.acc b{color:var(--accent)}
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
-.tab{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font:inherit;font-weight:500;color:var(--ink-2);cursor:pointer;white-space:nowrap}
-.tab[aria-selected="true"]{color:var(--ink);border-color:var(--accent);font-weight:700}
-.tab .n{font-family:var(--f-mono);font-size:11px;background:var(--mute-soft);border-radius:8px;padding:1px 6px;margin-left:4px}
+.tabs{display:inline-flex;gap:4px;padding:4px;margin-bottom:16px;background:var(--accent-soft);border:1px solid #c3dce8;border-radius:12px;max-width:100%;overflow-x:auto}
+.tab{display:inline-flex;align-items:center;gap:6px;background:transparent;border:0;border-radius:9px;padding:9px 18px;font:inherit;font-size:14px;font-weight:500;color:#3d6478;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,box-shadow .15s,transform .1s}
+.tab:hover{background:#cbe1ec;color:#133f55}
+.tab:active{transform:scale(.97)}
+.tab[aria-selected="true"]{background:var(--surface);color:var(--accent);font-weight:700;box-shadow:0 1px 2px rgba(29,93,125,.15),0 3px 10px rgba(29,93,125,.14)}
+.tab .n{font-family:var(--f-mono);font-size:11px;font-weight:500;line-height:1;min-width:22px;text-align:center;padding:4px 6px;border-radius:999px;background:rgba(29,93,125,.12);color:var(--accent)}
+.tab .n:empty{display:none}
+.tab[aria-selected="true"] .n{background:var(--accent);color:var(--surface)}
 .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
 .search{flex:1 1 240px;min-width:0;position:relative}
 .search input{width:100%;padding:10px 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;border-radius:6px}
@@ -128,6 +132,8 @@ details ol{margin:6px 0 0;padding-left:20px}
 .sect{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;color:var(--ink-3);margin:18px 0 8px;text-transform:uppercase}
 footer{margin-top:28px;font-size:12px;color:var(--ink-3);border-top:1px solid var(--line);padding-top:12px}
 @media (max-width:760px){
+  .tabs{display:flex;width:100%}
+  .tab{flex:1;justify-content:center;padding:9px 10px}
   .asof{text-align:left}
   .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
   .stats .stat:last-child{grid-column:1/-1}
@@ -142,13 +148,14 @@ footer{margin-top:28px;font-size:12px;color:var(--ink-3);border-top:1px solid va
 </head>
 <body>
 
+
 <div class="wrap">
   <header class="top">
     <div>
       <div class="eyebrow">Station Manager Tenure Control</div>
       <h1>外站派駐任期看板</h1>
     </div>
-    <div class="asof">資料來源：外站人員派駐任期管控表 2026/10/01<br>剩餘天數以今天 <span id="today"></span> 即時計算</div>
+    <div class="asof">資料來源：外站人員派駐任期管控表 2026/11/27<br>剩餘天數以今天 <span id="today"></span> 即時計算</div>
   </header>
 
   <div class="stats" id="stats"></div>
@@ -217,26 +224,26 @@ const SM = [
  {r:"東北亞",s:"RMQ",g:"經理",n:"Kelly Lo",open:"2024-03-31",type:"local",note:"2024/1/15晉用"},
  {r:"東北亞",s:"KHH",g:"經理",n:"Sammi Huang",open:"2027-01-01",type:"local",note:"(待開航)"},
  {r:"東北亞",s:"NRT",g:"經理",n:"Ya-Hsin Ko",open:"2020-12-06",start:"2023-10-01",end:"2027-09-30",sel:"2027-03-30",hist:["桑原","Real Huo（2023/6/15接任NRT）2020/10/22-2024/10/22","Ya-Hsin Ko 2024/10/25接任"]},
- {r:"東北亞",s:"FUK",g:"資專",n:"Sean Li",open:"2022-02-17",start:"2025-03-24",end:"2029-03-23",sel:"2028-09-23",hist:["Jerry Hu 2022/4/7-2025/4/7"]},
+ {r:"東北亞",s:"FUK",g:"資專",n:"Bill Pao",open:"2022-02-17",start:"2025-11-01",end:"2029-10-31",sel:"2029-05-01",hist:["Jerry Hu 2022/4/7-2025/4/7","Sean Li 2025/3/24-2026/11/30","Bill Pao 2026/11/16接任"]},
  {r:"東北亞",s:"CTS",g:"課長",n:"Carrie Liu",open:"2022-10-28",start:"2024-10-01",end:"2028-09-30",sel:"2028-03-30",hist:["Wen-Chieh Lo 2022/9/30-2026/10/1","Carrie 2026/9/17接任"]},
  {r:"東北亞",s:"OKA",g:"課長",n:"Zoe Wang",open:"2022-10-28",start:"2023-03-15",end:"2028-03-14",sel:"2027-09-14",note:"2025/9/15接任；擬延長一年至2028/3/14",hist:["Ryo Suehiro SM任期至2024/4/30","Jerry Liu 2024/4/1-2025/9/21","Zoe Wang 2025/9/15接任"]},
  {r:"東北亞",s:"SDJ",g:"資專",n:"Heather Chen",open:"2023-04-01",start:"2024-01-15",end:"2028-01-14",sel:"2027-07-14",hist:["Zoe Wang 2023/3/15-2024/1/31"]},
  {r:"東北亞",s:"KIX",g:"課長",n:"Angel Liu",open:"2020-12-15",start:"2023-07-01",end:"2027-06-30",sel:"2026-12-30",hist:["Real Huo 2020/4/22-2023/6/14"]},
  {r:"東北亞",s:"KMJ",g:"課長",n:"Naomi Lai",open:"2023-09-01",start:"2023-10-01",end:"2027-09-30",sel:"2027-03-30",note:"擬由EJ接任"},
  {r:"東北亞",s:"NGO",g:"課長",n:"Nami N.",open:"2023-12-01",start:"2024-03-01",end:"2028-02-29",sel:"2027-08-29",hist:["Ya-Hsin Ko 2023/10/1-2024/10/24","Nami N. 2024/10/16接任"]},
- {r:"東北亞",s:"HKD",g:"資專",n:"Yi-Ju Lu",open:"2024-02-01",start:"2024-01-04",end:"2028-01-03",sel:"2027-07-03"},
+ {r:"東北亞",s:"HKD",g:"資專",n:"Yi-Ju Lu",open:"2024-02-01",start:"2024-01-04",end:"2028-01-03",sel:"2027-07-03",note:"簽證2027/12/17到期"},
  {r:"東北亞",s:"TAK",g:"資專",n:"Raimy Wu",open:"2024-03-31",start:"2026-09-01",end:"2030-08-31",sel:"2030-03-03",hist:["Nami N. 2024/3/1-2024/10/15","Carrie Liu 2024/10/1-2026/9/16","Raimy 2026/9/1接任"]},
  {r:"東北亞",s:"UKB",g:"資專",n:"John Wu",open:"2025-04-18",start:"2025-02-10",end:"2029-02-09",sel:"2028-08-09"},
  {r:"東北亞",s:"HKG",g:"課長",n:"Ian Kao",open:"2024-07-08",start:"2024-04-01",end:"2028-03-31",sel:"2027-10-01"},
  {r:"東北亞",s:"MFM",g:"經理",n:"Esmond Ng",open:"2020-01-23",type:"local"},
  {r:"東北亞",s:"SHI",g:"資專",n:"Meng Shan Tsai",open:"2026-02-12",start:"2026-01-01",end:"2027-12-31",sel:"2027-07-01"},
  {r:"東北亞",s:"PUS",g:"資專",n:"Victor Chang",open:"2026-06-01",start:"2026-05-27",end:"2030-05-26",sel:"2029-11-26"},
- {r:"東北亞",s:"CJU",n:"TBD",open:"2027-05-01",type:"tbd",note:"待CPD通知是否籌設"},
+ {r:"東北亞",s:"CJU",n:"(擬)Chung-Che Wei",open:"2027-05-15",type:"tbd",note:"暫定2027/5月中開航"},
  // 東南亞
  {r:"東南亞",s:"MNL",g:"資專",n:"Yu-Te Lee",open:"2025-12-16",start:"2025-09-01",end:"2029-08-31",sel:"2029-03-03",hist:["Zach Wang 2021/10/1-2024/3/23"]},
- {r:"東南亞",s:"CRK",g:"課長",n:"York Wu",open:"2023-08-15",start:"2023-06-01",end:"2027-05-31",sel:"2026-12-01",note:"黃超詣預計1/18接任"},
+ {r:"東南亞",s:"CRK",g:"課長",n:"York Wu",open:"2023-08-15",start:"2023-06-01",end:"2027-02-01",sel:"2026-08-01",note:"黃超詣預計2/1接任"},
  {r:"東南亞",s:"CEB",g:"資專",n:"Wallace Huang",open:"2023-01-17",start:"2022-12-12",end:"2027-12-11",sel:"2027-06-11",note:"已延長至2027/12/11；接任者待定"},
- {r:"東南亞",s:"HAN",g:"資專",n:"Nelson Huang",open:"2023-01-13",start:"2026-04-17",end:"2028-03-31",sel:"2027-10-01",hist:["Sam Chung 2022/12/12-2026/5/1"]},
+ {r:"東南亞",s:"HAN",g:"資專",n:"Nelson Huang",open:"2023-01-13",start:"2026-04-17",end:"2028-03-31",sel:"2027-10-01",hist:["Sam Chung 2022/12/12-2026/5/1","Nelson Huang 2026/4/15接任"]},
  {r:"東南亞",s:"DAD",g:"資專",n:"Jacob Pham",open:"2020-01-23",start:"2026-04-15",type:"local",hist:["Peter Fu 2019/11/1-2023/3/18","Elvis Chao 2023/3/1-2026/4/15"]},
  {r:"東南亞",s:"SGN",g:"課長",n:"David Ting",open:"2021-05-13",start:"2026-02-01",end:"2030-01-31",sel:"2029-07-31",hist:["Peter Fu 2021/5/13-2022/10/1","Barnett Chang 2022/10/3-2026/2/15"]},
  {r:"東南亞",s:"PQC",g:"資專",n:"Leo Chang",open:"2024-06-20",start:"2026-04-01",end:"2030-03-31",sel:"2029-10-01",hist:["Nelson Huang 2024/4/1-2026/4/17"]},
@@ -246,19 +253,17 @@ const SM = [
  {r:"東南亞",s:"SIN",g:"資專",n:"Joseph Wu",open:"2021-09-23",start:"2025-01-03",end:"2029-01-02",sel:"2028-07-02",hist:["Eason Lin 2021/11/9-2025/1/17"]},
  {r:"東南亞",s:"CGK",g:"課長",n:"Tom Yeh",open:"2024-09-01",start:"2024-06-24",end:"2028-06-23",sel:"2027-12-23"},
  {r:"東南亞",s:"DPS",g:"資專",n:"Nivek Yu",open:"2026-10-01",start:"2026-05-02",end:"2030-05-01",sel:"2029-11-01"},
- {r:"東南亞",s:"DEL",g:"資專",n:"Chung-Che Wei",open:"2027-09-01",start:"2027-03-01",end:"2030-02-28",sel:"2029-08-28",note:"(待開航) 人資：此站任期為3年"},
  // 北美
  {r:"北美",s:"LAX",g:"課長",n:"Danny Sin",open:"2023-04-26",start:"2026-05-04",type:"na",hist:["Jessica Lin 2023/4/26-2025/7/15","Leo Tsao 2024/2/26-2026/1/9"]},
  {r:"北美",s:"SFO",g:"課長",n:"Wei-Chao Chen",open:"2023-12-15",start:"2025-05-18",end:"2029-05-17",sel:"2028-11-17",hist:["Allen Chou 2023/7/1-2025/7/7"]},
  {r:"北美",s:"SEA",g:"課長",n:"Eason Lin",open:"2024-08-16",start:"2025-06-16",end:"2029-06-15",sel:"2028-12-15",hist:["Leo Tsao 2024/2/26-2024/6/3"]},
- {r:"北美",s:"ONT",g:"課長",n:"Barnett Chang",open:"2025-06-02",start:"2026-04-20",end:"2030-04-19",sel:"2029-10-19",hist:["Danny Sin 2023/4/26-2026/5/4"]},
+ {r:"北美",s:"ONT",g:"課長",n:"Barnett Chang",open:"2025-06-02",start:"2026-04-20",end:"2030-04-19",sel:"2029-10-19",note:"後續擬由Vivian Lau接任",hist:["Danny Sin 2023/4/26-2026/5/4"]},
  {r:"北美",s:"PHX",g:"資專",n:"Ryan Pao",open:"2026-01-15",start:"2024-08-15",end:"2028-08-14",sel:"2028-02-14",note:"2025/7/1轉派駐PHX"},
- {r:"北美",s:"BOS",n:"TBD",open:"2027-08-01",type:"tbd",note:"(待開航) 預計Barnett接任"},
- {r:"北美",s:"DFW",n:"TBD",open:"2027-12-01",type:"tbd",note:"(待開航)"},
- {r:"北美",s:"IAD",n:"TBD",openText:"TBD",type:"tbd",note:"(評估中)"},
+ {r:"北美",s:"BOS",n:"(擬)Barnett Chang",open:"2027-08-01",type:"tbd",note:"(待開航)"},
+ {r:"北美",s:"DFW",n:"(擬)Jeffery Chung",open:"2027-12-01",type:"tbd",note:"(待開航)"},
  // 歐洲
  {r:"歐洲",s:"PRG",g:"課長",n:"Johnny Chen",open:"2026-08-01",start:"2026-01-01",end:"2029-12-31",sel:"2029-07-01"},
- {r:"歐洲",s:"ZRH",n:"TBD",openText:"暫緩開航",type:"tbd",note:"暫緩開航"},
+ {r:"歐洲",s:"MXP",n:"(擬)Elvis Chao",open:"2027-10-31",type:"tbd",note:"暫定2027/10月底開航"},
  // 紐澳
  {r:"紐澳",s:"SYD",g:"課長",n:"Eric Hsiao",open:"2027-03-23",start:"2026-10-01",end:"2030-09-30",sel:"2030-03-30",note:"(待開航)"},
  {r:"紐澳",s:"AKL",g:"資專",n:"Lumi Lu",open:"2027-03-23",start:"2026-10-01",end:"2030-09-30",sel:"2030-03-30",note:"(待開航)"},
@@ -266,31 +271,24 @@ const SM = [
  {r:"已關場站",s:"PEN",n:"關站",open:"2020-01-13",start:"2023-03-01",end:"2027-02-28",type:"closed",note:"2025/3/27關站",hist:["Wei-Chao Chen 2019/11/1-2024/3/17","Phoenix Lee 2023/3/1-2025/4/26"]},
 ];
 const DM = [
- {s:"NRT",g:"資專",n:"Bill Pao",start:"2025-11-01",end:"2029-10-31",sel:"2029-05-01",hist:["Zoe Wang 2024/2/1-2025/9/14"]},
+ {s:"NRT",g:"資專",n:"Sofia Lang",start:"2027-02-01",end:"2031-01-31",sel:"2030-07-31",note:"預計2027/2/1派任",hist:["Zoe Wang 2024/2/1-2025/9/14","Bill Pao 2025/11/1-2026/11/15"]},
  {s:"NRT",n:"Suehiro Ryo",type:"local",note:"2024/6/1接任NRT DM"},
+ {s:"OKA",g:"資專",n:"Jenny Liao",start:"2027-02-01",end:"2031-01-31",sel:"2030-07-31",note:"預計2027/2/1派任"},
  {s:"MFM",n:"Josephine Chong",type:"local"},
  {s:"BKK",n:"Metinee Watthanasopon",type:"local"},
+ {s:"CRK",g:"資專",n:"Feivel Huang",start:"2026-11-16",end:"2030-11-15",sel:"2030-05-15",note:"2027/2/1接任CRK SM"},
  {s:"LAX",n:"Vivian Lau",type:"local"},
 ];
-// 「(TBD)未來規劃」工作表，僅保留仍對應現任 SM 的項目
-const PLAN = {
- OKA:{ret:"期望延長",st:"完成"},
- CRK:{ret:"(擬)提早派返",lv:"LV1",st:"規劃中"},
- KIX:{next:"TPE",st:"待辦"},
- NRT:{succ:"Wen-Chieh Lo",st:"待辦"},
- KMJ:{next:"TPE",succ:"Lynn or TBD",when:"2026/7/1",st:"規劃中"},
- SHI:{next:"(擬)日本其他站",st:"待辦"},
- CEB:{st:"待辦"},
-};
+const PLAN = {};
 const REGIONS=["全部","東北亞","東南亞","北美","歐洲","紐澳","已關場站"];
 const CTRY={
  TPE:"台灣",RMQ:"台灣",KHH:"台灣",
  NRT:"日本",FUK:"日本",CTS:"日本",OKA:"日本",SDJ:"日本",KIX:"日本",KMJ:"日本",NGO:"日本",HKD:"日本",TAK:"日本",UKB:"日本",SHI:"日本",
  HKG:"香港",MFM:"澳門",PUS:"韓國",CJU:"韓國",
  MNL:"菲律賓",CRK:"菲律賓",CEB:"菲律賓",HAN:"越南",DAD:"越南",SGN:"越南",PQC:"越南",
- BKK:"泰國",CNX:"泰國",KUL:"馬來西亞",PEN:"馬來西亞",SIN:"新加坡",CGK:"印尼",DPS:"印尼",DEL:"印度",
- LAX:"美國",SFO:"美國",SEA:"美國",ONT:"美國",PHX:"美國",BOS:"美國",DFW:"美國",IAD:"美國",
- PRG:"捷克",ZRH:"瑞士",SYD:"澳洲",AKL:"紐西蘭"};
+ BKK:"泰國",CNX:"泰國",KUL:"馬來西亞",PEN:"馬來西亞",SIN:"新加坡",CGK:"印尼",DPS:"印尼",
+ LAX:"美國",SFO:"美國",SEA:"美國",ONT:"美國",PHX:"美國",BOS:"美國",DFW:"美國",
+ PRG:"捷克",MXP:"義大利",SYD:"澳洲",AKL:"紐西蘭"};
 // 原表「SM派任時程」的儲存格註解
 const CMT={
  OKA:["任期結束：之後須回歸原本計算公式，目前額外 +1 年"],
@@ -300,8 +298,6 @@ const CMT={
  MNL:["2021/7/8 開站，2024/3/30 關站，2025/12/16 復航"],
  CEB:["任期結束：之後須回歸原本計算公式，目前額外 +1 年"],
  HAN:["2026/4/17 自 PQC 調任，初始派駐日 2024/4/1"],
- DEL:["人資：此站任期為 3 年"],
- ZRH:["人資：此站任期為 3 年"],
 };
 SM.forEach(p=>{p.c=CTRY[p.s]||"其他";p.cmt=CMT[p.s]||[]});
 const regionOf=s=>(SM.find(x=>x.s===s)||{});
@@ -318,7 +314,7 @@ function status(p){
   if(p.type==="closed")return {k:"closed",t:"已關站",c:""};
   if(p.type==="local")return {k:"local",t:"當地雇員",c:""};
   if(p.type==="na")return {k:"local",t:"任期不適用",c:""};
-  if(p.type==="tbd"||!p.end)return {k:"tbd",t:"人選未定",c:""};
+  if(p.type==="tbd"||!p.end)return /^\(擬\)/.test(p.n||"")?{k:"tbd",t:"擬派",c:"b-acc"}:{k:"tbd",t:"人選未定",c:"b-warn"};
   const rd=days(p.end), sd=p.sel?days(p.sel):null;
   if(rd<0)return {k:"over",t:`已逾期 ${-rd} 天`,c:"b-crit",lvl:"crit"};
   if(sd!==null&&sd<=0)return {k:"sel",t:`遴選期・剩 ${rd} 天`,c:"b-crit",lvl:"crit"};
@@ -330,7 +326,8 @@ const isExpat=p=>!p.type&&!!p.end;
 
 // ---- stats ----
 function renderStats(){
-  const ex=[...SM.filter(isExpat),...DM.filter(isExpat)].filter(p=>inScope(p.s));
+  const ex=[...SM.filter(isExpat),...DM.filter(isExpat)].filter(p=>inScope(p.s)&&days(p.start)<=0);
+  const soon=[...SM.filter(isExpat),...DM.filter(isExpat)].filter(p=>inScope(p.s)&&days(p.start)>0).length;
   const y1=ex.filter(p=>days(p.end)>=0&&days(p.end)<=365).length;
   const y2=ex.filter(p=>days(p.end)>365&&days(p.end)<=730).length;
   const sel=ex.filter(p=>p.sel&&days(p.sel)<=0).length;
@@ -338,7 +335,7 @@ function renderStats(){
   const pend=SM.filter(p=>isPending(p)&&inScope(p.s)).length;
   const sc=scopeLabel();
   document.getElementById("stats").innerHTML=`
-   <button class="stat acc" data-go="expat"><b>${ex.length}</b><span>${sc?sc+" ":""}外派中 SM / DM</span></button>
+   <button class="stat acc" data-go="expat"><b>${ex.length}</b><span>${sc?sc+" ":""}外派中 SM / DM${soon?`（另 ${soon} 人待到任）`:""}</span></button>
    <button class="stat warn" data-go="y1"><b>${y1}</b><span>${sc?sc+" ":""}12 個月內派返</span></button>
    <button class="stat warn" data-go="y2"><b>${y2}</b><span>${sc?sc+" ":""}12–24 個月內派返</span></button>
    <button class="stat crit" data-go="sel"><b>${sel}</b><span>${sc?sc+" ":""}已進入遴選期${over?`（含逾期 ${over}）`:""}</span></button>
@@ -400,7 +397,7 @@ function card(p){
   let badges=`<span class="badge ${st.c}">${st.t}</span>`;
   if(pend)badges=`<span class="badge b-acc">待開航</span> `+badges;
   const planHtml=pl?`<div class="plan"><b>後續規劃</b>　${[pl.ret&&"預計派返："+pl.ret,pl.lv&&"未來級別："+pl.lv,pl.next&&"後續任務："+pl.next,pl.succ&&"接任人選："+pl.succ,pl.when&&"派駐時程："+pl.when,"狀態："+pl.st].filter(Boolean).join("；")}</div>`:"";
-  const dmHtml=dms.length?`<div class="dm"><span class="lbl">DM</span>${dms.map(d=>{const s2=status(d);return `<div><b>${d.n}</b>${d.g?` · ${d.g}`:""}　${d.end?`<span class="mono">${fmt(d.start)} → ${fmt(d.end)}</span>　遴選 <span class="mono">${fmt(d.sel)}</span>　`:""}<span class="badge ${s2.c}">${s2.t}</span>${d.note?`<div class="sub" style="color:var(--ink-3)">${d.note}</div>`:""}</div>`}).join("")}</div>`:"";
+  const dmHtml=dms.length?`<div class="dm"><span class="lbl">DM</span>${dms.map(d=>{const s2=status(d);return `<div><b>${d.n}</b>${d.g?` · ${d.g}`:""}　${d.end?`<span class="mono">${fmt(d.start)} → ${fmt(d.end)}</span>　遴選 <span class="mono">${fmt(d.sel)}</span>　`:""}${d.start&&d.end&&days(d.start)>0?`<span class="badge b-acc">預計 ${fmt(d.start)} 到任</span> `:""}<span class="badge ${s2.c}">${s2.t}</span>${d.hist?`<details><summary>歷任 DM（${d.hist.length}）</summary><ol>${d.hist.map(h=>`<li>${h}</li>`).join("")}</ol></details>`:""}${d.note?`<div class="sub" style="color:var(--ink-3)">${d.note}</div>`:""}</div>`}).join("")}</div>`:"";
   return `<article class="card" id="st-${p.s}">
    <div class="c-head"><div class="code">${p.s}</div>
     <div class="who"><div class="nm">${p.n}</div><div class="meta">${p.r} · ${p.c}${p.g?" · "+p.g:""}</div></div>
@@ -515,6 +512,7 @@ let start="q";try{start=localStorage.getItem("tenure-tab")||"q"}catch(e){}
 if(["q","c","p"].includes(h))start=h;
 show(start);
 </script>
+
 
 </body>
 </html>
